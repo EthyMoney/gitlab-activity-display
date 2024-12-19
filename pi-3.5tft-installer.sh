@@ -3,11 +3,11 @@
 # This will set up a new fresh pi running pi os lite for booting into minimal display manager and running the app
 # This will also install and configure the SPI display and touch screen drivers
 
-# With x64 Pi OS Bookworm Lite: Tested working on Pi 4, but on Pi 3 the openbox session does not start and instead we get stuck at a logged in terminal.
-# As a workaround for the Pi 3, you can use the 32-bit Pi OS Bullseye (legacy) Lite, which works fine with this script. Maybe 64-bit Bullseye Lite works too, but I haven't tested it. I tested 32-bit Bullseye Lite on a Pi 3 and it worked fine.
-
-# TODO: status: installed but booted to a non-logged in terminal on a pi zero2, need to see wtf is going one. Not convinced lightdm is working right and the autostart stuff is never running.
-# TODO: I mean, we aren't even logging in anymore..... bruv
+# Requirements
+# A Raspberry Pi running Raspberry Pi OS Lite Bookworm (64-bit)
+# A 3.5" SPI display with touch screen (tested with a generic one, but should work with most)
+# A GitLab feed URL to display activity from
+# A cold beer while you wait for the script to finish :)
 
 USERNAME="logan"
 
@@ -90,13 +90,9 @@ xset s noblank
 # Compton for display performance and vsync
 compton -b &
 
-# Environment variables for Node.js and npm
-export PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
-
 # Start the application (deb package installed by the script)
 gitlab-activity-display &
 EOF
-#TODO: remove the log line above when ready to deploy 
 
 echo "Wrote autostart file."
 
@@ -126,33 +122,24 @@ echo ""
 echo "====== Configuring LightDM Autologin ======"
 echo ""
 
-# Configure LightDM autologin (modifies existing lines if they exist, adds them under the [Seat:*] section if they don't)
-if ! grep -q "^greeter-session=" /etc/lightdm/lightdm.conf; then
-  sed -i "/^\[Seat:\*\]/a greeter-session=lightdm-gtk-greeter" /etc/lightdm/lightdm.conf
-else
-  sed -i "s/^greeter-session=.*/greeter-session=lightdm-gtk-greeter/" /etc/lightdm/lightdm.conf
-fi
+# Replace the lightdm.conf file with the specified content to configure it for our use
+cat << EOF > /etc/lightdm/lightdm.conf
+# Customized specifically for gitlab-activity-display application
 
-if ! grep -q "^user-session=" /etc/lightdm/lightdm.conf; then
-  sed -i "/^\[Seat:\*\]/a user-session=openbox" /etc/lightdm/lightdm.conf
-else
-  sed -i "s/^user-session=.*/user-session=openbox/" /etc/lightdm/lightdm.conf
-fi
+[Seat:*]
+autologin-session=openbox
+autologin-user=$USERNAME
+user-session=openbox
+greeter-session=lightdm-gtk-greeter
+EOF
 
-if ! grep -q "^autologin-user=" /etc/lightdm/lightdm.conf; then
-  sed -i "/^\[Seat:\*\]/a autologin-user=$USERNAME" /etc/lightdm/lightdm.conf
-else
-  sed -i "s/^autologin-user=.*/autologin-user=$USERNAME/" /etc/lightdm/lightdm.conf
-fi
-
-if ! grep -q "^autologin-session=" /etc/lightdm/lightdm.conf; then
-  sed -i "/^\[Seat:\*\]/a autologin-session=openbox" /etc/lightdm/lightdm.conf
-else
-  sed -i "s/^autologin-session=.*/autologin-session=openbox/" /etc/lightdm/lightdm.conf
-fi
+echo "LightDM configuration file updated."
 
 # Enable LightDM service to ensure it starts on boot
 systemctl enable lightdm
+
+# Set the system to boot into the graphical target
+systemctl set-default graphical.target
 
 echo ""
 echo "LightDM autologin configured."
@@ -319,7 +306,7 @@ npm run make-pi
 # Install the required dependencies
 apt install trash-cli libglib2.0-bin -y
 
-# Install the built application deb file (note: this will complain about some missing KDE dependencies, but it's fine)
+# Install the built application deb file (note: this might complain about some missing KDE dependencies, but it's fine)
 dpkg -i /home/$USERNAME/gitlab-activity-display/out/make/deb/arm64/gitlab-activity-display_*_arm64.deb
 
 # the autostart file for openbox is configured to start this built app on boot, we're done!
