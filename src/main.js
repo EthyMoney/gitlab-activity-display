@@ -22,6 +22,8 @@ const createWindow = () => {
       contextIsolation: false
     },
     icon: __dirname + '/favicon.ico', // gets brought into the build by vite (as configured in vite.main.config.mjs)
+    fullscreen: true, // Optional: Open the window in fullscreen mode
+    frame: false // Optional: Remove window frame if desired (needs to be false to hide mouse cursor)
   });
 
   // and load the index.html of the app.
@@ -33,8 +35,6 @@ const createWindow = () => {
 
   // remove the menu
   mainWindow.removeMenu();
-
-
 
   // Remove the DevTools for a cleaner display.
   // mainWindow.webContents.openDevTools();
