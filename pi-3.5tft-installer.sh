@@ -126,7 +126,6 @@ sed -i 's/console=tty1/console=tty3/' /boot/firmware/cmdline.txt
 sed -i 's/$/ quiet splash plymouth.ignore-serial-consoles logo.nologo loglevel=3/' /boot/firmware/cmdline.txt
 
 raspi-config nonint do_boot_splash 0
-raspi-config nonint do_boot_behaviour B4
 
 # Config adjustments for display performance using compton
 echo -e "vsync = true;\nbackend = \"glx\";\nfading = false;\nshadow-exclude = [ \"name = 'cursor'\" ];" >/home/$USERNAME/.config/compton.conf
@@ -138,6 +137,9 @@ echo ""
 echo ""
 echo "====== Configuring LightDM Autologin ======"
 echo ""
+
+# Update initramfs
+update-initramfs -u
 
 # Replace the lightdm.conf file with the specified content to configure it for our use
 cat << EOF > /etc/lightdm/lightdm.conf
@@ -161,9 +163,6 @@ systemctl set-default graphical.target
 echo ""
 echo "LightDM autologin configured."
 echo ""
-
-# Update initramfs
-update-initramfs -u
 
 # Ensure the user owns their config files
 chown -R $USERNAME:$USERNAME /home/$USERNAME/.config
