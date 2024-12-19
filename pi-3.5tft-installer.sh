@@ -275,13 +275,6 @@ echo ""
 echo "  ---- Display and touch screen components installed and configured. ----"
 echo ""
 
-# Add message about display rotation
-echo "Please note: You might need to adjust the display rotation depending on your installation."
-echo "If needed, you can change the rotation by modifying the 'rotate' angle value at the 'dtoverlay=tft35a:rotate=<angle here>' line in the /boot/firmware/config.txt file."
-echo ""
-echo "Press any key to acknowledge and continue."
-read -n 1 -s -r
-
 echo ""
 echo "====== Installing The Application ======"
 echo ""
