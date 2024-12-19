@@ -130,6 +130,9 @@ raspi-config nonint do_boot_splash 0
 # Config adjustments for display performance using compton
 echo -e "vsync = true;\nbackend = \"glx\";\nfading = false;\nshadow-exclude = [ \"name = 'cursor'\" ];" >/home/$USERNAME/.config/compton.conf
 
+# Update initramfs
+update-initramfs -u
+
 echo ""
 echo "Configuration triggers complete."
 echo ""
@@ -137,9 +140,6 @@ echo ""
 echo ""
 echo "====== Configuring LightDM Autologin ======"
 echo ""
-
-# Update initramfs
-update-initramfs -u
 
 # Replace the lightdm.conf file with the specified content to configure it for our use
 cat << EOF > /etc/lightdm/lightdm.conf
