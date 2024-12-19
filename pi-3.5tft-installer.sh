@@ -258,13 +258,18 @@ else
     echo "You selected the default speed (16MHz), which should be compatible with most boards."
 fi
 
-# If the line already exists in config.txt, modify it. Otherwise, add it.
-if grep -q "dtoverlay=tft35a:rotate=90" /boot/firmware/config.txt; then
-    sed -i "s|dtoverlay=tft35a:rotate=90.*|dtoverlay=tft35a:rotate=90,speed=$speed,fps=60|" /boot/firmware/config.txt
-else
-    echo "dtoverlay=tft35a:rotate=90,speed=$speed,fps=60" >> /boot/firmware/config.txt
-fi
+# Prompt the user to enter their rotation angle
+echo ""
+echo "Please enter the rotation angle for your display."
+echo "Hint: GPIO header towards top should be 90, and GPIO towards bottom should be 270."
+read -p "Enter rotation angle (90, 180, 270, etc.): " rotation_angle
 
+# If the line already exists in config.txt, modify it. Otherwise, add it.
+if grep -q "dtoverlay=tft35a:rotate=" /boot/firmware/config.txt; then
+    sed -i "s|dtoverlay=tft35a:rotate=.*|dtoverlay=tft35a:rotate=$rotation_angle,speed=$speed,fps=60|" /boot/firmware/config.txt
+else
+    echo "dtoverlay=tft35a:rotate=$rotation_angle,speed=$speed,fps=60" >> /boot/firmware/config.txt
+fi
 # Note, the above line is what you need to change if you wish to rotate the display orientation or attempt to change the speed or fps on a different display
 echo ""
 echo "  ---- Display and touch screen components installed and configured. ----"
