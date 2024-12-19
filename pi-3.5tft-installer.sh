@@ -93,14 +93,8 @@ compton -b &
 # Environment variables for Node.js and npm
 export PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 
-# Start the application
-while true; do
-  echo "Starting application..."
-  cd /home/$USERNAME/gitlab-activity-display
-  npm start >> /home/$USERNAME/gitlab-activity-display/AAAAAAA.log 2>&1
-  npm start
-  sleep 5
-done &
+# Start the application (deb package installed by the script)
+gitlab-activity-display &
 EOF
 #TODO: remove the log line above when ready to deploy 
 
@@ -132,11 +126,30 @@ echo ""
 echo "====== Configuring LightDM Autologin ======"
 echo ""
 
-# Configure LightDM autologin
-sed -i "s/#autologin-user=/autologin-user=$USERNAME/" /etc/lightdm/lightdm.conf
-sed -i "s/#autologin-session=/autologin-session=openbox/" /etc/lightdm/lightdm.conf
-sed -i 's/^user-session=.*/user-session=openbox/' /etc/lightdm/lightdm.conf
-sed -i 's/^autologin-session=.*/autologin-session=openbox/' /etc/lightdm/lightdm.conf
+# Configure LightDM autologin (modifies existing lines if they exist, adds them under the [Seat:*] section if they don't)
+if ! grep -q "^greeter-session=" /etc/lightdm/lightdm.conf; then
+  sed -i "/^\[Seat:\*\]/a greeter-session=lightdm-gtk-greeter" /etc/lightdm/lightdm.conf
+else
+  sed -i "s/^greeter-session=.*/greeter-session=lightdm-gtk-greeter/" /etc/lightdm/lightdm.conf
+fi
+
+if ! grep -q "^user-session=" /etc/lightdm/lightdm.conf; then
+  sed -i "/^\[Seat:\*\]/a user-session=openbox" /etc/lightdm/lightdm.conf
+else
+  sed -i "s/^user-session=.*/user-session=openbox/" /etc/lightdm/lightdm.conf
+fi
+
+if ! grep -q "^autologin-user=" /etc/lightdm/lightdm.conf; then
+  sed -i "/^\[Seat:\*\]/a autologin-user=$USERNAME" /etc/lightdm/lightdm.conf
+else
+  sed -i "s/^autologin-user=.*/autologin-user=$USERNAME/" /etc/lightdm/lightdm.conf
+fi
+
+if ! grep -q "^autologin-session=" /etc/lightdm/lightdm.conf; then
+  sed -i "/^\[Seat:\*\]/a autologin-session=openbox" /etc/lightdm/lightdm.conf
+else
+  sed -i "s/^autologin-session=.*/autologin-session=openbox/" /etc/lightdm/lightdm.conf
+fi
 
 # Enable LightDM service to ensure it starts on boot
 systemctl enable lightdm
@@ -153,11 +166,7 @@ sed -i 's/console=tty1/console=tty3/' /boot/firmware/cmdline.txt
 sed -i 's/$/ quiet splash plymouth.ignore-serial-consoles logo.nologo loglevel=3/' /boot/firmware/cmdline.txt
 
 raspi-config nonint do_boot_splash 0
-# this below possibly conflicts with lightdm
-#raspi-config nonint do_boot_behaviour B4
-
-# will maybe want this instead, it basically tells the pi to boot into the graphical target (lightdm + openbox, rather than a console)
-systemctl set-default graphical.target
+raspi-config nonint do_boot_behaviour B4
 
 # Config adjustments for display performance using compton
 echo -e "vsync = true;\nbackend = \"glx\";\nfading = false;\nshadow-exclude = [ \"name = 'cursor'\" ];" >/home/$USERNAME/.config/compton.conf
@@ -251,9 +260,9 @@ fi
 
 # If the line already exists in config.txt, modify it. Otherwise, add it.
 if grep -q "dtoverlay=tft35a:rotate=90" /boot/firmware/config.txt; then
-    sed -i "s|dtoverlay=tft35a:rotate=90.*|dtoverlay=tft35a:rotate=270,speed=$speed,fps=60|" /boot/firmware/config.txt
+    sed -i "s|dtoverlay=tft35a:rotate=90.*|dtoverlay=tft35a:rotate=90,speed=$speed,fps=60|" /boot/firmware/config.txt
 else
-    echo "dtoverlay=tft35a:rotate=270,speed=$speed,fps=60" >> /boot/firmware/config.txt
+    echo "dtoverlay=tft35a:rotate=90,speed=$speed,fps=60" >> /boot/firmware/config.txt
 fi
 
 # Note, the above line is what you need to change if you wish to rotate the display orientation or attempt to change the speed or fps on a different display
@@ -302,6 +311,20 @@ read -p "Enter your GitLab feed URL including the feed token: " gitlabFeedUrl
 
 # Replace the placeholder text in the config.json file
 sed -i "s|replace me!|$gitlabFeedUrl|g" /home/$USERNAME/gitlab-activity-display/config.json
+
+# Install RPM for electron make build
+apt install rpm -y
+
+# Build the app (will be arm64 for assumably a Pi running 64-bit Pi OS Lite)
+npm run make-pi
+
+# Install the required dependencies
+apt install trash-cli libglib2.0-bin -y
+
+# Install the built application deb file (note: this will complain about some missing KDE dependencies, but it's fine)
+dpkg -i /home/$USERNAME/gitlab-activity-display/out/make/deb/arm64/gitlab-activity-display_*_arm64.deb
+
+# the autostart file for openbox is configured to start this built app on boot, we're done!
 
 echo ""
 echo "  ---- Application Installed. ----"
