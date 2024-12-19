@@ -93,3 +93,14 @@ fetchFeed();
 
 // Set interval to auto-update every 5 minutes (300000 milliseconds)
 setInterval(fetchFeed, 300000);
+
+// Hide the mouse cursor
+document.body.style.cursor = 'none';
+
+// Add event listeners to keep the cursor hidden
+document.addEventListener('mousemove', hideCursor);
+document.addEventListener('touchmove', hideCursor);
+
+function hideCursor() {
+  document.body.style.cursor = 'none';
+}

@@ -6,6 +6,7 @@ body {
   padding: .5rem;
   background-color: #121212;
   color: #e0e0e0;
+  cursor: none;
 }
 
 #feed-container {
