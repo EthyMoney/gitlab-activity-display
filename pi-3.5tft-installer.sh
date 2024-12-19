@@ -119,6 +119,28 @@ echo "Openbox configured."
 echo ""
 
 echo ""
+echo "====== Processing Pi Configuration Special Triggers ======"
+echo ""
+
+sed -i 's/console=tty1/console=tty3/' /boot/firmware/cmdline.txt
+sed -i 's/$/ quiet splash plymouth.ignore-serial-consoles logo.nologo loglevel=3/' /boot/firmware/cmdline.txt
+
+raspi-config nonint do_boot_splash 0
+raspi-config nonint do_boot_behaviour B4
+
+# Config adjustments for display performance using compton
+echo -e "vsync = true;\nbackend = \"glx\";\nfading = false;\nshadow-exclude = [ \"name = 'cursor'\" ];" >/home/$USERNAME/.config/compton.conf
+
+update-initramfs -u
+
+# Ensure the user owns their config files
+chown -R $USERNAME:$USERNAME /home/$USERNAME/.config
+
+echo ""
+echo "Configuration triggers complete."
+echo ""
+
+echo ""
 echo "====== Configuring LightDM Autologin ======"
 echo ""
 
@@ -143,28 +165,6 @@ systemctl set-default graphical.target
 
 echo ""
 echo "LightDM autologin configured."
-echo ""
-
-echo ""
-echo "====== Processing Pi Configuration Special Triggers ======"
-echo ""
-
-sed -i 's/console=tty1/console=tty3/' /boot/firmware/cmdline.txt
-sed -i 's/$/ quiet splash plymouth.ignore-serial-consoles logo.nologo loglevel=3/' /boot/firmware/cmdline.txt
-
-raspi-config nonint do_boot_splash 0
-raspi-config nonint do_boot_behaviour B4
-
-# Config adjustments for display performance using compton
-echo -e "vsync = true;\nbackend = \"glx\";\nfading = false;\nshadow-exclude = [ \"name = 'cursor'\" ];" >/home/$USERNAME/.config/compton.conf
-
-update-initramfs -u
-
-# Ensure the user owns their config files
-chown -R $USERNAME:$USERNAME /home/$USERNAME/.config
-
-echo ""
-echo "Configuration triggers complete."
 echo ""
 
 echo ""
@@ -299,6 +299,12 @@ sed -i "s|replace me!|$gitlabFeedUrl|g" /home/$USERNAME/gitlab-activity-display/
 
 # Install RPM for electron make build
 apt install rpm -y
+
+# Increase swap size to 2GB to prevent out of memory errors during build (especially needed on 512MB RAM models) - the electron make command is gonna slam the RAM...
+sed -i 's/^CONF_SWAPSIZE=.*/CONF_SWAPSIZE=2048/' /etc/dphys-swapfile
+
+# Activate the new swap size
+systemctl restart dphys-swapfile
 
 # Build the app (will be arm64 for assumably a Pi running 64-bit Pi OS Lite)
 npm run make-pi
