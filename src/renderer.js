@@ -40,8 +40,8 @@ async function fetchFeed() {
 
       const updatedDate = new Date(updated);
       const now = new Date();
-      const tenMinutesAgo = new Date(now.getTime() - 10 * 60 * 1000);
-      const isNew = updatedDate > tenMinutesAgo;
+      const fifteenMinutesAgo = new Date(now.getTime() - 15 * 60 * 1000);
+      const isNew = updatedDate > fifteenMinutesAgo;
 
       // Parse the summary to extract the blockquote text and commit ID
       const summaryDoc = parser.parseFromString(summary, 'text/html');
@@ -91,8 +91,8 @@ async function fetchFeed() {
 // Initial fetch
 fetchFeed();
 
-// Set interval to auto-update every 5 minutes (300000 milliseconds)
-setInterval(fetchFeed, 300000);
+// Set interval to auto-update every minute (60,000 milliseconds)
+setInterval(fetchFeed, 60000);
 
 // Hide the mouse cursor
 document.body.style.cursor = 'none';

@@ -4,7 +4,8 @@ import started from 'electron-squirrel-startup';
 import fetch from 'node-fetch';
 import config from '../config.json';
 
-console.log('config:', config);
+const currentTime = new Date().toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
+console.log('Application attempting to start...', currentTime);
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -57,6 +58,10 @@ ipcMain.handle('fetch-feed', async () => {
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
   createWindow();
+
+  // Log that the application has started and show the current time in 12-hour AM/PM format
+  const currentTime = new Date().toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
+  console.log(`Application started at ${currentTime}`);
 
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
