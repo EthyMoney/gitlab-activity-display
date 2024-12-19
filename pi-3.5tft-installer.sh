@@ -131,11 +131,6 @@ raspi-config nonint do_boot_behaviour B4
 # Config adjustments for display performance using compton
 echo -e "vsync = true;\nbackend = \"glx\";\nfading = false;\nshadow-exclude = [ \"name = 'cursor'\" ];" >/home/$USERNAME/.config/compton.conf
 
-update-initramfs -u
-
-# Ensure the user owns their config files
-chown -R $USERNAME:$USERNAME /home/$USERNAME/.config
-
 echo ""
 echo "Configuration triggers complete."
 echo ""
@@ -162,6 +157,20 @@ systemctl enable lightdm
 
 # Set the system to boot into the graphical target
 systemctl set-default graphical.target
+
+echo ""
+echo "LightDM autologin configured."
+echo ""
+
+# Update initramfs
+update-initramfs -u
+
+# Ensure the user owns their config files
+chown -R $USERNAME:$USERNAME /home/$USERNAME/.config
+
+echo ""
+echo "Configuration complete."
+echo ""
 
 echo ""
 echo "LightDM autologin configured."
