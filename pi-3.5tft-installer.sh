@@ -300,6 +300,9 @@ npm i -g yarn
 
 npm i
 
+# Install RPM for electron make build
+apt install rpm -y
+
 # Set username as the owner of the application files
 chown -R $USERNAME:$USERNAME /home/$USERNAME/gitlab-activity-display
 
@@ -315,9 +318,6 @@ read -p "Enter your GitLab feed URL including the feed token: " gitlabFeedUrl
 
 # Replace the placeholder text in the config.json file
 sed -i "s|replace me!|$gitlabFeedUrl|g" /home/$USERNAME/gitlab-activity-display/config.json
-
-# Install RPM for electron make build
-apt install rpm -y
 
 # Increase swap size to 2GB to prevent out of memory errors during build (especially needed on 512MB RAM models) - the electron make command is gonna slam the RAM...
 sed -i 's/^CONF_SWAPSIZE=.*/CONF_SWAPSIZE=2048/' /etc/dphys-swapfile
