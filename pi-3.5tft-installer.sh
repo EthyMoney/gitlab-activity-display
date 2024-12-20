@@ -222,6 +222,46 @@ else
     echo "You selected the default speed (16MHz), which should be compatible with most boards."
 fi
 
+# Detect Raspberry Pi version
+MODEL=$(cat /proc/device-tree/model)
+
+if [[ $MODEL == *"Raspberry Pi 4"* || $MODEL == *"Raspberry Pi 5"* ]]; then
+    echo "Detected Raspberry Pi 4 or 5. No additional configuration required for Xorg."
+else
+    echo "Detected older Raspberry Pi model. Applying Xorg configuration for SPI display."
+
+    # Create Xorg configuration for SPI display
+    mkdir -p /etc/X11/xorg.conf.d
+
+    cat << EOF > /etc/X11/xorg.conf.d/99-fbdev.conf
+Section "Device"
+    Identifier "SPI Display"
+    Driver "fbdev"
+    Option "fbdev" "/dev/fb1"
+EndSection
+
+Section "Screen"
+    Identifier "Default Screen"
+    Device "SPI Display"
+    Monitor "Primary Monitor"
+    DefaultDepth 24
+    SubSection "Display"
+        Depth 24
+        Modes "480x320"
+    EndSubSection
+EndSection
+
+Section "Monitor"
+    Identifier "Primary Monitor"
+EndSection
+EOF
+
+    echo "Xorg configuration for SPI display has been created."
+
+    # Ensure correct permissions for framebuffer device
+    chmod a+rw /dev/fb1
+fi
+
 # Prompt the user to enter their rotation angle
 echo ""
 echo "Please enter the rotation angle for your display."
@@ -234,7 +274,9 @@ if grep -q "dtoverlay=tft35a:rotate=" /boot/firmware/config.txt; then
 else
     echo "dtoverlay=tft35a:rotate=$rotation_angle,speed=$speed,fps=60" >> /boot/firmware/config.txt
 fi
-# Note, the above line is what you need to change if you wish to rotate the display orientation or attempt to change the speed or fps on a different display
+
+echo "SPI display settings applied to /boot/firmware/config.txt."
+
 echo ""
 echo "  ---- Display and touch screen components installed and configured. ----"
 echo ""
