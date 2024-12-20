@@ -8,7 +8,7 @@
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
-    "make-pi": "electron-forge make --arch=arm64 --platform=linux",
+    "make-pi": "electron-forge make --arch=arm64 --platform=linux --targets=deb",
     "publish": "electron-forge publish",
     "lint": "echo \"No linting configured\""
   },
