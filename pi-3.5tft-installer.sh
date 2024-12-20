@@ -130,6 +130,9 @@ raspi-config nonint do_boot_splash 0
 # Config adjustments for display performance using compton
 echo -e "vsync = true;\nbackend = \"glx\";\nfading = false;\nshadow-exclude = [ \"name = 'cursor'\" ];" >/home/$USERNAME/.config/compton.conf
 
+# Ensure the user owns their config files
+chown -R $USERNAME:$USERNAME /home/$USERNAME/.config
+
 # Update initramfs
 update-initramfs -u
 
@@ -138,41 +141,7 @@ echo "Configuration triggers complete."
 echo ""
 
 echo ""
-echo "====== Configuring LightDM Autologin ======"
-echo ""
-
-# Replace the lightdm.conf file with the specified content to configure it for our use
-cat << EOF > /etc/lightdm/lightdm.conf
-# Customized specifically for gitlab-activity-display application
-
-[Seat:*]
-autologin-session=openbox
-autologin-user=$USERNAME
-user-session=openbox
-greeter-session=lightdm-gtk-greeter
-EOF
-
-echo "LightDM configuration file updated."
-
-# Enable LightDM service to ensure it starts on boot
-systemctl enable lightdm
-
-# Set the system to boot into the graphical target
-systemctl set-default graphical.target
-
-echo ""
-echo "LightDM autologin configured."
-echo ""
-
-# Ensure the user owns their config files
-chown -R $USERNAME:$USERNAME /home/$USERNAME/.config
-
-echo ""
 echo "Configuration complete."
-echo ""
-
-echo ""
-echo "LightDM autologin configured."
 echo ""
 
 echo ""
@@ -328,6 +297,36 @@ dpkg -i /home/$USERNAME/gitlab-activity-display/out/make/deb/arm64/gitlab-activi
 echo ""
 echo "  ---- Application Installed. ----"
 echo ""
+
+echo ""
+echo "====== Configuring LightDM Autologin ======"
+echo ""
+
+# Replace the lightdm.conf file with the specified content to configure it for our use
+cat << EOF > /etc/lightdm/lightdm.conf
+# Customized specifically for gitlab-activity-display application
+
+[Seat:*]
+autologin-session=openbox
+autologin-user=$USERNAME
+user-session=openbox
+greeter-session=lightdm-gtk-greeter
+EOF
+
+echo "LightDM configuration file updated."
+
+# Enable LightDM service to ensure it starts on boot
+systemctl enable lightdm
+
+# Set the system to boot into the graphical target
+#systemctl set-default graphical.target
+
+echo ""
+echo "LightDM autologin configured."
+echo ""
+
+# Update initramfs (again, just in case)
+update-initramfs -u
 
 # Now prompt the user to reboot with a default of yes
 echo ""
