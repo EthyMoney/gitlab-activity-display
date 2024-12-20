@@ -319,7 +319,7 @@ echo "LightDM configuration file updated."
 systemctl enable lightdm
 
 # Set the system to boot into the graphical target
-#systemctl set-default graphical.target
+systemctl set-default graphical.target
 
 echo ""
 echo "LightDM autologin configured."
