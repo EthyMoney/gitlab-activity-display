@@ -3,8 +3,11 @@
 # This will set up a new fresh pi running pi os lite for booting into minimal display manager and running the app
 # This will also install and configure the SPI display and touch screen drivers
 
+# THIS SCRIPT ONLY WORKS ON NEWER PI MODELS LIKE THE PI 4 AND PI 5, AND WITH 64-BIT PI OS LITE
+# Use the other script for older models!
+
 # Requirements
-# A Raspberry Pi running Raspberry Pi OS Lite Bookworm (64-bit)
+# A Raspberry Pi 4 or Pi 5, running Raspberry Pi OS Lite Bookworm 64-bit
 # A 3.5" SPI display with touch screen (tested with a generic one, but should work with most)
 # A GitLab feed URL to display activity from
 # A cold beer while you wait for the script to finish :)
@@ -285,7 +288,7 @@ echo ""
 echo "====== Installing The Application ======"
 echo ""
 
-# Clone the thermostat application
+# Clone the application
 cd /home/$USERNAME
 git clone https://github.com/EthyMoney/gitlab-activity-display.git
 
@@ -333,6 +336,12 @@ apt install trash-cli libglib2.0-bin -y
 
 # Install the built application deb file (note: this might complain about some missing KDE dependencies, but it's fine)
 dpkg -i /home/$USERNAME/gitlab-activity-display/out/make/deb/arm64/gitlab-activity-display_*_arm64.deb
+
+# Undo the swap size change
+sed -i 's/^CONF_SWAPSIZE=.*/CONF_SWAPSIZE=512/' /etc/dphys-swapfile
+
+# Activate the original swap size
+systemctl restart dphys-swapfiles
 
 # the autostart file for openbox is configured to start this built app on boot, we're done!
 
