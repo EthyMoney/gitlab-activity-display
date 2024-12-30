@@ -225,6 +225,46 @@ else
     echo "You selected the default speed (16MHz), which should be compatible with most boards."
 fi
 
+# Detect Raspberry Pi version
+MODEL=$(cat /proc/device-tree/model)
+
+if [[ $MODEL == *"Raspberry Pi 4"* || $MODEL == *"Raspberry Pi 5"* ]]; then
+    echo "Detected Raspberry Pi 4 or 5. No additional configuration required for Xorg."
+else
+    echo "Detected older Raspberry Pi model. Applying Xorg configuration for SPI display."
+
+    # Create Xorg configuration for SPI display
+    mkdir -p /etc/X11/xorg.conf.d
+
+    cat << EOF > /etc/X11/xorg.conf.d/99-fbdev.conf
+Section "Device"
+    Identifier "SPI Display"
+    Driver "fbdev"
+    Option "fbdev" "/dev/fb1"
+EndSection
+
+Section "Screen"
+    Identifier "Default Screen"
+    Device "SPI Display"
+    Monitor "Primary Monitor"
+    DefaultDepth 24
+    SubSection "Display"
+        Depth 24
+        Modes "480x320"
+    EndSubSection
+EndSection
+
+Section "Monitor"
+    Identifier "Primary Monitor"
+EndSection
+EOF
+
+    echo "Xorg configuration for SPI display has been created."
+
+    # Ensure correct permissions for framebuffer device
+    chmod a+rw /dev/fb1
+fi
+
 # Prompt the user to enter their rotation angle
 echo ""
 echo "Please enter the rotation angle for your display."
@@ -258,10 +298,16 @@ cd /home/$USERNAME/gitlab-activity-display
 # this is a workaround for a bug in npm optional dependencies that causes a broken electron-forge install
 rm -rf package-lock.json
 
-# install yarn globally since electron forge requires it
-npm i -g yarn
+# Increase swap size to 2GB to prevent out of memory errors during build (especially needed on 512MB RAM models) - the electron make command is gonna slam the RAM...
+sed -i 's/^CONF_SWAPSIZE=.*/CONF_SWAPSIZE=2048/' /etc/dphys-swapfile
 
-npm i
+# Activate the new swap size
+systemctl restart dphys-swapfile
+
+# install yarn globally since electron forge requires it
+node --max-old-space-size=8000 $(which npm) install -g yarn
+
+node --max-old-space-size=8000 $(which npm) install
 
 # Install RPM for electron make build
 apt install rpm -y
@@ -282,20 +328,14 @@ read -p "Enter your GitLab feed URL including the feed token: " gitlabFeedUrl
 # Replace the placeholder text in the config.json file
 sed -i "s|replace me!|$gitlabFeedUrl|g" /home/$USERNAME/gitlab-activity-display/config.json
 
-# Increase swap size to 2GB to prevent out of memory errors during build (especially needed on 512MB RAM models) - the electron make command is gonna slam the RAM...
-sed -i 's/^CONF_SWAPSIZE=.*/CONF_SWAPSIZE=2048/' /etc/dphys-swapfile
-
-# Activate the new swap size
-systemctl restart dphys-swapfile
-
-# Build the app (will be arm64 for assumably a Pi running 64-bit Pi OS Lite)
-npm run make-pi
+# Build the app (will be arm64 for assumably a Pi running 64-bit Pi OS)
+node --max-old-space-size=8000 $(which npm) run make-pi-32
 
 # Install the required dependencies
 apt install trash-cli libglib2.0-bin -y
 
 # Install the built application deb file (note: this might complain about some missing KDE dependencies, but it's fine)
-dpkg -i /home/$USERNAME/gitlab-activity-display/out/make/deb/arm64/gitlab-activity-display_*_arm64.deb
+dpkg -i /home/$USERNAME/gitlab-activity-display/out/make/deb/armhf/gitlab-activity-display_*_armhf.deb
 
 # Undo the swap size change
 sed -i 's/^CONF_SWAPSIZE=.*/CONF_SWAPSIZE=512/' /etc/dphys-swapfile
@@ -310,30 +350,13 @@ echo "  ---- Application Installed. ----"
 echo ""
 
 echo ""
-echo "====== Configuring LightDM Autologin ======"
+echo "====== Configuring  Autologin ======"
 echo ""
 
-# Replace the lightdm.conf file with the specified content to configure it for our use
-cat << EOF > /etc/lightdm/lightdm.conf
-# Customized specifically for gitlab-activity-display application
-
-[Seat:*]
-autologin-session=openbox
-autologin-user=$USERNAME
-user-session=openbox
-greeter-session=lightdm-gtk-greeter
-EOF
-
-echo "LightDM configuration file updated."
-
-# Enable LightDM service to ensure it starts on boot
-systemctl enable lightdm
-
-# Set the system to boot into the graphical target
-systemctl set-default graphical.target
+sudo raspi-config nonint do_boot_behaviour B4
 
 echo ""
-echo "LightDM autologin configured."
+echo "Autologin configured."
 echo ""
 
 # Update initramfs (again, just in case)
