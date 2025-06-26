@@ -27,6 +27,9 @@ async function fetchFeed() {
     const feedContainer = document.getElementById('feed-container');
     const statusContainer = document.getElementById('status-container');
 
+    // Store current entry count to detect new entries
+    const currentEntryCount = feedContainer.children.length;
+    
     feedContainer.innerHTML = ''; // Clear previous content
 
     Array.from(entries).forEach(entry => {
@@ -90,6 +93,11 @@ async function fetchFeed() {
     // Update the last successful fetch time
     lastSuccessfulFetchTime = new Date();
     statusContainer.innerHTML = ''; // Clear any previous status messages
+    
+    // Reset scroll position to top if new entries were added
+    if (entries.length > currentEntryCount) {
+      feedContainer.scrollTop = 0;
+    }
   } catch (error) {
     console.error('Error fetching feed:', error);
     const statusContainer = document.getElementById('status-container');
@@ -114,3 +122,53 @@ document.addEventListener('touchmove', hideCursor);
 function hideCursor() {
   document.body.style.cursor = 'none';
 }
+
+// Add touch/drag scrolling functionality
+let isScrolling = false;
+let startY = 0;
+let startScrollTop = 0;
+
+const feedContainer = document.getElementById('feed-container');
+
+// Mouse events for drag scrolling
+feedContainer.addEventListener('mousedown', (e) => {
+  isScrolling = true;
+  startY = e.clientY;
+  startScrollTop = feedContainer.scrollTop;
+  feedContainer.style.cursor = 'grabbing';
+  e.preventDefault();
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (!isScrolling) return;
+  e.preventDefault();
+  
+  const deltaY = startY - e.clientY;
+  feedContainer.scrollTop = startScrollTop + deltaY;
+});
+
+document.addEventListener('mouseup', () => {
+  if (isScrolling) {
+    isScrolling = false;
+    feedContainer.style.cursor = 'none';
+  }
+});
+
+// Touch events for mobile scrolling
+feedContainer.addEventListener('touchstart', (e) => {
+  isScrolling = true;
+  startY = e.touches[0].clientY;
+  startScrollTop = feedContainer.scrollTop;
+});
+
+feedContainer.addEventListener('touchmove', (e) => {
+  if (!isScrolling) return;
+  
+  const deltaY = startY - e.touches[0].clientY;
+  feedContainer.scrollTop = startScrollTop + deltaY;
+  e.preventDefault();
+});
+
+feedContainer.addEventListener('touchend', () => {
+  isScrolling = false;
+});
