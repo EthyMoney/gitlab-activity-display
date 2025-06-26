@@ -17,6 +17,7 @@ import './index.css';
 const { ipcRenderer } = require('electron');
 
 let lastSuccessfulFetchTime = null;
+let displayedEntries = new Set(); // Track which entries have been displayed
 
 async function fetchFeed() {
   try {
@@ -27,21 +28,36 @@ async function fetchFeed() {
     const feedContainer = document.getElementById('feed-container');
     const statusContainer = document.getElementById('status-container');
 
-    // Store current entry count to detect new entries
-    const currentEntryCount = feedContainer.children.length;
-    
-    feedContainer.innerHTML = ''; // Clear previous content
-
-    Array.from(entries).forEach(entry => {
-      const title = entry.getElementsByTagName('title')[0].textContent;
+    // Store current entries to detect new ones
+    const currentEntries = Array.from(entries).map(entry => {
+      const id = entry.getElementsByTagName('id')[0].textContent;
       const updated = entry.getElementsByTagName('updated')[0].textContent;
+      return { id, updated, element: entry };
+    });
+    
+    // Check if any entries are new before clearing content
+    const hasNewEntries = currentEntries.some(({ id }) => !displayedEntries.has(id));
+    
+    // Clear previous content
+    feedContainer.innerHTML = '';
+
+    currentEntries.forEach(({ id, updated, element: entry }) => {
+      const title = entry.getElementsByTagName('title')[0].textContent;
       const summary = entry.getElementsByTagName('summary')[0].innerHTML;
       const author = entry.getElementsByTagName('author')[0].getElementsByTagName('name')[0].textContent;
       
       const updatedDate = new Date(updated);
       const now = new Date();
       const fifteenMinutesAgo = new Date(now.getTime() - 15 * 60 * 1000);
-      const isNew = updatedDate > fifteenMinutesAgo;
+      
+      // Check if this is a genuinely new entry (not seen before)
+      const isNewEntry = !displayedEntries.has(id);
+      
+      // Check if this entry is from the last 15 minutes
+      const isRecentEntry = updatedDate > fifteenMinutesAgo;
+      
+      // Add to displayed entries set
+      displayedEntries.add(id);
 
       // Parse different activity types from the title
       let activityText = '';
@@ -116,7 +132,7 @@ async function fetchFeed() {
       }
 
       const item = document.createElement('div');
-      item.className = 'feed-item new';
+      item.className = isNewEntry ? 'feed-item new' : 'feed-item';
       const formattedDate = updatedDate.toLocaleDateString('en-US', { 
         month: '2-digit', 
         day: '2-digit'
@@ -133,7 +149,7 @@ async function fetchFeed() {
         ${detailText ? `<p>${detailText}</p>` : ''}
       `;
 
-      if (isNew) {
+      if (isRecentEntry) {
         const newDot = document.createElement('span');
         newDot.className = 'new-dot';
         const newText = document.createElement('span');
@@ -146,20 +162,27 @@ async function fetchFeed() {
 
       feedContainer.appendChild(item);
 
-      // Remove the 'new' class after the animation ends
-      setTimeout(() => {
-        item.classList.remove('new');
-      }, 1000);
+      // Remove the 'new' class after the animation ends, but only if it was actually new
+      if (isNewEntry) {
+        setTimeout(() => {
+          item.classList.remove('new');
+        }, 1000);
+      }
     });
 
     // Update the last successful fetch time
     lastSuccessfulFetchTime = new Date();
     statusContainer.innerHTML = ''; // Clear any previous status messages
     
-    // Reset scroll position to top if new entries were added
-    if (entries.length > currentEntryCount) {
+    // Scroll to top if there were new entries
+    if (hasNewEntries) {
       feedContainer.scrollTop = 0;
     }
+    
+    // Clean up old entries from our tracking set to prevent memory leaks
+    // Keep only the current entries
+    const currentIds = new Set(currentEntries.map(entry => entry.id));
+    displayedEntries = new Set([...displayedEntries].filter(id => currentIds.has(id)));
   } catch (error) {
     console.error('Error fetching feed:', error);
     const statusContainer = document.getElementById('status-container');
