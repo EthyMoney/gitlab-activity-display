@@ -86,11 +86,12 @@ body {
 h4 {
   color: #90caf9;
   margin-top: 0px;
+  margin-bottom: 2px;
 }
 
 p {
   color: #b0bec5;
   margin-bottom: 0px;
-  margin-top: 5px;
+  margin-top: 2px;
   font-size: 14px;
 }

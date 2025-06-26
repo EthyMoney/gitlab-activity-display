@@ -52,9 +52,19 @@ async function fetchFeed() {
 
       const item = document.createElement('div');
       item.className = 'feed-item new';
+      const formattedDate = updatedDate.toLocaleDateString('en-US', { 
+        month: '2-digit', 
+        day: '2-digit', 
+        year: 'numeric' 
+      });
+      const formattedTime = updatedDate.toLocaleTimeString('en-US', { 
+        hour: 'numeric', 
+        minute: '2-digit', 
+        hour12: true 
+      });
       item.innerHTML = `
         <h4>${author} pushed to ${repo}/${branch}</h4>
-        <p>${updatedDate.toLocaleString()}</p>
+        <p>${formattedDate} ${formattedTime}</p>
         <p>${cleanSummary} ${commitId}</p>
       `;
 
