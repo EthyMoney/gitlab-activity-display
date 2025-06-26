@@ -37,38 +37,100 @@ async function fetchFeed() {
       const updated = entry.getElementsByTagName('updated')[0].textContent;
       const summary = entry.getElementsByTagName('summary')[0].innerHTML;
       const author = entry.getElementsByTagName('author')[0].getElementsByTagName('name')[0].textContent;
-      const repoBranchMatch = title.match(/at (.+) \/ (.+)/);
-      const repo = repoBranchMatch ? repoBranchMatch[1] : 'Unknown Repo';
-      const branch = repoBranchMatch ? repoBranchMatch[2] : 'Unknown Branch';
-
+      
       const updatedDate = new Date(updated);
       const now = new Date();
       const fifteenMinutesAgo = new Date(now.getTime() - 15 * 60 * 1000);
       const isNew = updatedDate > fifteenMinutesAgo;
 
-      // Parse the summary to extract the blockquote text and commit ID
-      const summaryDoc = parser.parseFromString(summary, 'text/html');
-      const blockquote = summaryDoc.querySelector('.blockquote p');
-      const commitLink = summaryDoc.querySelector('a');
-      const cleanSummary = blockquote ? blockquote.textContent.trim() : '';
-      const commitId = commitLink ? commitLink.textContent.trim() : '';
+      // Parse different activity types from the title
+      let activityText = '';
+      let projectInfo = '';
+      let detailText = '';
+
+      // Extract project path (everything after "at ")
+      const projectMatch = title.match(/at (.+)$/);
+      projectInfo = projectMatch ? projectMatch[1] : 'Unknown Project';
+
+      // Determine activity type and format accordingly
+      if (title.includes('pushed to')) {
+        const pushMatch = title.match(/(.+) pushed to (.+) at/);
+        if (pushMatch) {
+          const branch = pushMatch[2];
+          activityText = `pushed to ${branch}`;
+          
+          // Parse the summary to extract commit info for pushes
+          const summaryDoc = parser.parseFromString(summary, 'text/html');
+          const blockquote = summaryDoc.querySelector('.blockquote p');
+          const commitLink = summaryDoc.querySelector('a');
+          const cleanSummary = blockquote ? blockquote.textContent.trim() : '';
+          const commitId = commitLink ? commitLink.textContent.trim() : '';
+          detailText = `${cleanSummary} ${commitId}`;
+        }
+      } else if (title.includes('opened issue')) {
+        const issueMatch = title.match(/opened issue #(\d+): (.+) at/);
+        if (issueMatch) {
+          const issueNumber = issueMatch[1];
+          const issueTitle = issueMatch[2];
+          activityText = `opened issue #${issueNumber}`;
+          detailText = issueTitle;
+        }
+      } else if (title.includes('closed issue')) {
+        const issueMatch = title.match(/closed issue #(\d+): (.+) at/);
+        if (issueMatch) {
+          const issueNumber = issueMatch[1];
+          const issueTitle = issueMatch[2];
+          activityText = `closed issue #${issueNumber}`;
+          detailText = issueTitle;
+        }
+      } else if (title.includes('opened merge request')) {
+        const mrMatch = title.match(/opened merge request !(\d+): (.+) at/);
+        if (mrMatch) {
+          const mrNumber = mrMatch[1];
+          const mrTitle = mrMatch[2];
+          activityText = `opened merge request !${mrNumber}`;
+          detailText = mrTitle;
+        }
+      } else if (title.includes('accepted merge request')) {
+        const mrMatch = title.match(/accepted merge request !(\d+): (.+) at/);
+        if (mrMatch) {
+          const mrNumber = mrMatch[1];
+          const mrTitle = mrMatch[2];
+          activityText = `accepted merge request !${mrNumber}`;
+          detailText = mrTitle;
+        }
+      } else if (title.includes('commented on')) {
+        const commentMatch = title.match(/commented on (.+) at/);
+        if (commentMatch) {
+          const commentTarget = commentMatch[1];
+          activityText = `commented on ${commentTarget}`;
+          // For comments, we might want to show part of the comment from summary
+          const summaryDoc = parser.parseFromString(summary, 'text/html');
+          const commentText = summaryDoc.textContent.trim();
+          detailText = commentText.length > 100 ? commentText.substring(0, 100) + '...' : commentText;
+        }
+      } else {
+        // Generic fallback for unknown activity types
+        const genericMatch = title.match(/(.+) at/);
+        activityText = genericMatch ? genericMatch[1] : title;
+      }
 
       const item = document.createElement('div');
       item.className = 'feed-item new';
       const formattedDate = updatedDate.toLocaleDateString('en-US', { 
         month: '2-digit', 
-        day: '2-digit', 
-        year: 'numeric' 
+        day: '2-digit'
       });
       const formattedTime = updatedDate.toLocaleTimeString('en-US', { 
         hour: 'numeric', 
         minute: '2-digit', 
         hour12: true 
       });
+      
       item.innerHTML = `
-        <h4>${author} pushed to ${repo}/${branch}</h4>
-        <p>${formattedDate} ${formattedTime}</p>
-        <p>${cleanSummary} ${commitId}</p>
+        <h4>${author} ${activityText}</h4>
+        <p>${formattedDate} ${formattedTime} • ${projectInfo}</p>
+        ${detailText ? `<p>${detailText}</p>` : ''}
       `;
 
       if (isNew) {
