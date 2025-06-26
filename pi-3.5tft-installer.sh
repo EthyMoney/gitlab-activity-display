@@ -77,16 +77,15 @@ echo ""
 echo "====== Configuring OpenBox ======"
 echo ""
 
+# Modify global xinitrc file to disable power management and screen blanking (sleep)
+echo "xset s off" >> /etc/X11/xinit/xinitrc
+echo "xset -dpms" >> /etc/X11/xinit/xinitrc
+echo "xset s noblank" >> /etc/X11/xinit/xinitrc
+
 # Create the autostart file at /home/$USERNAME/.config/openbox/autostart
 mkdir -p /home/$USERNAME/.config/openbox
 cat << EOF > /home/$USERNAME/.config/openbox/autostart
 #!/bin/bash
-
-# Disable screen saver and power management
-xset s off
-xset -dpms
-xset s noblank
-
 # Keep the mouse cursor hidden
 unclutter -idle 0 &
 
@@ -104,9 +103,6 @@ chmod +x /home/$USERNAME/.config/openbox/autostart
 
 # Create xsession file to launch openbox
 echo "#!/bin/bash" > /home/$USERNAME/.xsession
-echo "xset s off" >> /home/$USERNAME/.xsession
-echo "xset -dpms" >> /home/$USERNAME/.xsession
-echo "xset s noblank" >> /home/$USERNAME/.xsession
 echo "exec openbox-session" >> /home/$USERNAME/.xsession
 
 # Make the .xsession file executable
