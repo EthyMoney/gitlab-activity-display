@@ -42,9 +42,10 @@ async function fetchFeed() {
     feedContainer.innerHTML = '';
 
     currentEntries.forEach(({ id, updated, element: entry }) => {
-      const title = entry.getElementsByTagName('title')[0].textContent;
-      const summary = entry.getElementsByTagName('summary')[0].innerHTML;
-      const author = entry.getElementsByTagName('author')[0].getElementsByTagName('name')[0].textContent;
+      const title = entry.getElementsByTagName('title')[0]?.textContent || '';
+      const summary = entry.getElementsByTagName('summary')[0]?.innerHTML || '';
+      const authorElement = entry.getElementsByTagName('author')[0]?.getElementsByTagName('name')[0];
+      const author = authorElement?.textContent || 'Unknown User';
       
       const updatedDate = new Date(updated);
       const now = new Date();
@@ -64,12 +65,12 @@ async function fetchFeed() {
       let projectInfo = '';
       let detailText = '';
 
-      // Extract project path (everything after "at ")
-      const projectMatch = title.match(/at (.+)$/);
+      // Extract project path (everything after "at " or "in ") - add null check
+      const projectMatch = title ? (title.match(/at (.+)$/) || title.match(/in (.+)$/)) : null;
       projectInfo = projectMatch ? projectMatch[1] : 'Unknown Project';
 
       // Determine activity type and format accordingly
-      if (title.includes('pushed to')) {
+      if (title && title.includes('pushed to')) {
         const pushMatch = title.match(/(.+) pushed to (.+) at/);
         if (pushMatch) {
           const branch = pushMatch[2];
@@ -83,7 +84,7 @@ async function fetchFeed() {
           const commitId = commitLink ? commitLink.textContent.trim() : '';
           detailText = `${cleanSummary} ${commitId}`;
         }
-      } else if (title.includes('opened issue')) {
+      } else if (title && title.includes('opened issue')) {
         const issueMatch = title.match(/opened issue #(\d+): (.+) at/);
         if (issueMatch) {
           const issueNumber = issueMatch[1];
@@ -91,7 +92,7 @@ async function fetchFeed() {
           activityText = `opened issue #${issueNumber}`;
           detailText = issueTitle;
         }
-      } else if (title.includes('closed issue')) {
+      } else if (title && title.includes('closed issue')) {
         const issueMatch = title.match(/closed issue #(\d+): (.+) at/);
         if (issueMatch) {
           const issueNumber = issueMatch[1];
@@ -99,7 +100,7 @@ async function fetchFeed() {
           activityText = `closed issue #${issueNumber}`;
           detailText = issueTitle;
         }
-      } else if (title.includes('opened merge request')) {
+      } else if (title && title.includes('opened merge request')) {
         const mrMatch = title.match(/opened merge request !(\d+): (.+) at/);
         if (mrMatch) {
           const mrNumber = mrMatch[1];
@@ -107,7 +108,7 @@ async function fetchFeed() {
           activityText = `opened merge request !${mrNumber}`;
           detailText = mrTitle;
         }
-      } else if (title.includes('accepted merge request')) {
+      } else if (title && title.includes('accepted merge request')) {
         const mrMatch = title.match(/accepted merge request !(\d+): (.+) at/);
         if (mrMatch) {
           const mrNumber = mrMatch[1];
@@ -115,20 +116,63 @@ async function fetchFeed() {
           activityText = `accepted merge request !${mrNumber}`;
           detailText = mrTitle;
         }
-      } else if (title.includes('commented on')) {
+      } else if (title && title.includes('commented on')) {
         const commentMatch = title.match(/commented on (.+) at/);
         if (commentMatch) {
           const commentTarget = commentMatch[1];
-          activityText = `commented on ${commentTarget}`;
-          // For comments, we might want to show part of the comment from summary
+          // Check if it's specifically an issue comment
+          const issueCommentMatch = commentTarget.match(/issue #(\d+): (.+)/);
+          if (issueCommentMatch) {
+            const issueNumber = issueCommentMatch[1];
+            const issueTitle = issueCommentMatch[2];
+            activityText = `commented on issue #${issueNumber}`;
+            detailText = issueTitle;
+          } else {
+            activityText = `commented on ${commentTarget}`;
+            // For other comments, we might want to show part of the comment from summary
+            const summaryDoc = parser.parseFromString(summary, 'text/html');
+            const commentText = summaryDoc.textContent.trim();
+            detailText = commentText.length > 100 ? commentText.substring(0, 100) + '...' : commentText;
+          }
+        }
+      } else if (title && title.includes('created wiki page')) {
+        const wikiMatch = title.match(/created wiki page (.+) in/);
+        if (wikiMatch) {
+          const wikiPageName = wikiMatch[1];
+          activityText = `created wiki page`;
+          detailText = wikiPageName;
+        }
+      } else if (title && title.includes('updated wiki page')) {
+        const wikiMatch = title.match(/updated wiki page (.+) in/);
+        if (wikiMatch) {
+          const wikiPageName = wikiMatch[1];
+          activityText = `updated wiki page`;
+          detailText = wikiPageName;
+        }
+      } else if (title && title.includes('pushed new project branch')) {
+        const branchMatch = title.match(/pushed new project branch (.+) at/);
+        if (branchMatch) {
+          const branchName = branchMatch[1];
+          activityText = `pushed new branch ${branchName}`;
+          
+          // Parse the summary to extract commit info if available
           const summaryDoc = parser.parseFromString(summary, 'text/html');
-          const commentText = summaryDoc.textContent.trim();
-          detailText = commentText.length > 100 ? commentText.substring(0, 100) + '...' : commentText;
+          const blockquote = summaryDoc.querySelector('.blockquote p');
+          const commitLink = summaryDoc.querySelector('a');
+          const cleanSummary = blockquote ? blockquote.textContent.trim() : '';
+          const commitId = commitLink ? commitLink.textContent.trim() : '';
+          
+          // Check for additional commits
+          const moreCommitsText = summaryDoc.textContent || '';
+          const moreCommitsMatch = moreCommitsText.match(/(\d+) more commits/);
+          const additionalCommits = moreCommitsMatch ? ` (and ${moreCommitsMatch[1]} more commits)` : '';
+          
+          detailText = cleanSummary ? `${cleanSummary} ${commitId}${additionalCommits}` : '';
         }
       } else {
         // Generic fallback for unknown activity types
-        const genericMatch = title.match(/(.+) at/);
-        activityText = genericMatch ? genericMatch[1] : title;
+        const genericMatch = title ? title.match(/(.+) at/) : null;
+        activityText = genericMatch ? genericMatch[1] : (title || 'Unknown Activity');
       }
 
       const item = document.createElement('div');
