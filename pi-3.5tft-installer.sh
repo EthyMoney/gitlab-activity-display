@@ -77,17 +77,17 @@ echo ""
 echo "====== Configuring OpenBox ======"
 echo ""
 
-# Modify global xinitrc file to disable power management and screen blanking (sleep)
-echo "xset s off" >> /etc/X11/xinit/xinitrc
-echo "xset -dpms" >> /etc/X11/xinit/xinitrc
-echo "xset s noblank" >> /etc/X11/xinit/xinitrc
-
 # Create the autostart file at /home/$USERNAME/.config/openbox/autostart
 mkdir -p /home/$USERNAME/.config/openbox
 cat << EOF > /home/$USERNAME/.config/openbox/autostart
 #!/bin/bash
 # Keep the mouse cursor hidden
 unclutter -idle 0 &
+
+# Screen blanking and power management settings
+xset s noblank
+xset s off
+xset -dpms
 
 # Compton for display performance and vsync
 compton -b &
