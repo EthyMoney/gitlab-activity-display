@@ -3,11 +3,8 @@
 # This will set up a new fresh pi running pi os lite for booting into minimal display manager and running the app
 # This will also install and configure the SPI display and touch screen drivers
 
-# THIS SCRIPT ONLY WORKS ON NEWER PI MODELS LIKE THE PI 4 AND PI 5, AND WITH 64-BIT PI OS LITE
-# Use the other script for older models!
-
 # Requirements
-# A Raspberry Pi 4 or Pi 5, running Raspberry Pi OS Lite Bookworm 64-bit
+# A Raspberry Pi, running Raspberry Pi OS Lite Bookworm 64-bit
 # A 3.5" SPI display with touch screen (tested with a generic one, but should work with most)
 # A GitLab feed URL to display activity from
 # A cold beer while you wait for the script to finish :)
@@ -59,7 +56,7 @@ echo ""
 echo "====== Installing APT Packages ======"
 echo ""
 
-apt install vnstat neofetch git lightdm compton xserver-xorg xserver-xorg-input-all xinit x11-xserver-utils xserver-xorg-core xserver-xorg-video-all openbox npm wavemon -y
+apt install vnstat neofetch git lightdm compton xserver-xorg xserver-xorg-input-all xinit x11-xserver-utils xserver-xorg-core xserver-xorg-video-all openbox npm wavemon unclutter -y
 
 echo ""
 echo "====== Installing Updated Node.js and NPM + Global Packages ======"
@@ -89,6 +86,9 @@ cat << EOF > /home/$USERNAME/.config/openbox/autostart
 xset s off
 xset -dpms
 xset s noblank
+
+# Keep the mouse cursor hidden
+unclutter -idle 0 &
 
 # Compton for display performance and vsync
 compton -b &
@@ -274,7 +274,7 @@ mv /home/$USERNAME/gitlab-activity-display/config.json.template /home/$USERNAME/
 
 # Prompt the user to enter their GitLab feed URL
 echo ""
-echo "Here's what an example feed URL looks like, including the feed token that you can find on the bottom your personal access tokens page. The feed URL is found on your activity pages:"
+echo "Here's what an example feed URL looks like, including the feed token that you can find on the bottom your Access Tokens page. The feed URL is found on your activity pages (don't use the token from that link, go get it from your Access Tokens page):"
 echo "https://gitlab.yourcompany.com/dashboard/projects.atom?feed_token=your_feed_token_here"
 echo ""
 read -p "Enter your GitLab feed URL including the feed token: " gitlabFeedUrl
@@ -301,7 +301,7 @@ dpkg -i /home/$USERNAME/gitlab-activity-display/out/make/deb/arm64/gitlab-activi
 sed -i 's/^CONF_SWAPSIZE=.*/CONF_SWAPSIZE=512/' /etc/dphys-swapfile
 
 # Activate the original swap size
-systemctl restart dphys-swapfiles
+systemctl restart dphys-swapfile
 
 # the autostart file for openbox is configured to start this built app on boot, we're done!
 
@@ -335,6 +335,29 @@ systemctl set-default graphical.target
 echo ""
 echo "LightDM autologin configured."
 echo ""
+
+# On older pi's, we need to strip out glamor-test service that's part of newer Pi OS versions as it causes issues with the display by interfering with the driver in X11, see here: https://github.com/goodtft/LCD-show/issues/369#issuecomment-2115596683
+# This is specific to older pi devices, the 4 and 5 do not need this and it should not be present, see: https://github.com/goodtft/LCD-show/issues/369#issuecomment-2117629801
+# Without this step, on and older pi you will get stuck on either blank screen or a black screen with a mouse/terminal cursor on it, and the display will not work properly and app won't start/display.
+#
+# Check if this is NOT a Pi 4, Pi 5, or their Compute Module variants
+pi_model=$(cat /proc/cpuinfo | grep "Raspberry Pi" | head -1)
+if [[ ! "$pi_model" =~ "Raspberry Pi 4" ]] && [[ ! "$pi_model" =~ "Raspberry Pi 5" ]] && [[ ! "$pi_model" =~ "Raspberry Pi Compute Module 4" ]] && [[ ! "$pi_model" =~ "Raspberry Pi Compute Module 5" ]]; then
+    echo ""
+    echo "====== Removing glamor-test Service (not needed on Pi 4/5 or CM4/CM5) ======"
+    echo ""
+
+    sudo systemctl disable glamor-test.service
+    sudo rm -f /usr/share/X11/xorg.conf.d/20-noglamor.conf
+
+    echo ""
+    echo "glamor-test service removed."
+    echo ""
+else
+    echo ""
+    echo "====== Skipping glamor-test Service Removal (Pi 4/5 or CM4/CM5 detected) ======"
+    echo ""
+fi
 
 # Update initramfs (again, just in case)
 update-initramfs -u
