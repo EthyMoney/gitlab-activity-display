@@ -34,10 +34,10 @@ async function fetchFeed() {
       const updated = entry.getElementsByTagName('updated')[0].textContent;
       return { id, updated, element: entry };
     });
-    
+
     // Check if any entries are new before clearing content
     const hasNewEntries = currentEntries.some(({ id }) => !displayedEntries.has(id));
-    
+
     // Clear previous content
     feedContainer.innerHTML = '';
 
@@ -46,17 +46,17 @@ async function fetchFeed() {
       const summary = entry.getElementsByTagName('summary')[0]?.innerHTML || '';
       const authorElement = entry.getElementsByTagName('author')[0]?.getElementsByTagName('name')[0];
       const author = authorElement?.textContent || 'Unknown User';
-      
+
       const updatedDate = new Date(updated);
       const now = new Date();
       const fifteenMinutesAgo = new Date(now.getTime() - 15 * 60 * 1000);
-      
+
       // Check if this is a genuinely new entry (not seen before)
       const isNewEntry = !displayedEntries.has(id);
-      
+
       // Check if this entry is from the last 15 minutes
       const isRecentEntry = updatedDate > fifteenMinutesAgo;
-      
+
       // Add to displayed entries set
       displayedEntries.add(id);
 
@@ -75,7 +75,7 @@ async function fetchFeed() {
         if (pushMatch) {
           const branch = pushMatch[2];
           activityText = `pushed to ${branch}`;
-          
+
           // Parse the summary to extract commit info for pushes
           const summaryDoc = parser.parseFromString(summary, 'text/html');
           const blockquote = summaryDoc.querySelector('.blockquote p');
@@ -120,18 +120,26 @@ async function fetchFeed() {
         const commentMatch = title.match(/commented on (.+) at/);
         if (commentMatch) {
           const commentTarget = commentMatch[1];
-          // Check if it's specifically an issue comment
-          const issueCommentMatch = commentTarget.match(/issue #(\d+): (.+)/);
+          // Check if it's specifically an issue comment (with or without title)
+          const issueCommentMatch = commentTarget.match(/issue #(\d+)(?:: (.+))?/);
           if (issueCommentMatch) {
             const issueNumber = issueCommentMatch[1];
-            const issueTitle = issueCommentMatch[2];
+            const issueTitle = issueCommentMatch[2]; // This might be undefined if no title
             activityText = `commented on issue #${issueNumber}`;
-            detailText = issueTitle;
+
+            // For issue comments, show the actual comment from summary if no issue title
+            if (issueTitle) {
+              detailText = issueTitle;
+            } else {
+              const summaryDoc = parser.parseFromString(summary, 'text/html');
+              const commentText = summaryDoc.textContent?.trim() || '';
+              detailText = commentText.length > 100 ? commentText.substring(0, 100) + '...' : commentText;
+            }
           } else {
             activityText = `commented on ${commentTarget}`;
             // For other comments, we might want to show part of the comment from summary
             const summaryDoc = parser.parseFromString(summary, 'text/html');
-            const commentText = summaryDoc.textContent.trim();
+            const commentText = summaryDoc.textContent?.trim() || '';
             detailText = commentText.length > 100 ? commentText.substring(0, 100) + '...' : commentText;
           }
         }
@@ -154,19 +162,19 @@ async function fetchFeed() {
         if (branchMatch) {
           const branchName = branchMatch[1];
           activityText = `pushed new branch ${branchName}`;
-          
+
           // Parse the summary to extract commit info if available
           const summaryDoc = parser.parseFromString(summary, 'text/html');
           const blockquote = summaryDoc.querySelector('.blockquote p');
           const commitLink = summaryDoc.querySelector('a');
           const cleanSummary = blockquote ? blockquote.textContent.trim() : '';
           const commitId = commitLink ? commitLink.textContent.trim() : '';
-          
+
           // Check for additional commits
           const moreCommitsText = summaryDoc.textContent || '';
           const moreCommitsMatch = moreCommitsText.match(/(\d+) more commits/);
           const additionalCommits = moreCommitsMatch ? ` (and ${moreCommitsMatch[1]} more commits)` : '';
-          
+
           detailText = cleanSummary ? `${cleanSummary} ${commitId}${additionalCommits}` : '';
         }
       } else {
@@ -177,16 +185,16 @@ async function fetchFeed() {
 
       const item = document.createElement('div');
       item.className = isNewEntry ? 'feed-item new' : 'feed-item';
-      const formattedDate = updatedDate.toLocaleDateString('en-US', { 
-        month: '2-digit', 
+      const formattedDate = updatedDate.toLocaleDateString('en-US', {
+        month: '2-digit',
         day: '2-digit'
       });
-      const formattedTime = updatedDate.toLocaleTimeString('en-US', { 
-        hour: 'numeric', 
-        minute: '2-digit', 
-        hour12: true 
+      const formattedTime = updatedDate.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
       });
-      
+
       item.innerHTML = `
         <h4>${author} ${activityText}</h4>
         <p>${formattedDate} ${formattedTime} • ${projectInfo}</p>
@@ -217,12 +225,12 @@ async function fetchFeed() {
     // Update the last successful fetch time
     lastSuccessfulFetchTime = new Date();
     statusContainer.innerHTML = ''; // Clear any previous status messages
-    
+
     // Scroll to top if there were new entries
     if (hasNewEntries) {
       feedContainer.scrollTop = 0;
     }
-    
+
     // Clean up old entries from our tracking set to prevent memory leaks
     // Keep only the current entries
     const currentIds = new Set(currentEntries.map(entry => entry.id));
@@ -271,7 +279,7 @@ feedContainer.addEventListener('mousedown', (e) => {
 document.addEventListener('mousemove', (e) => {
   if (!isScrolling) return;
   e.preventDefault();
-  
+
   const deltaY = startY - e.clientY;
   feedContainer.scrollTop = startScrollTop + deltaY;
 });
@@ -292,7 +300,7 @@ feedContainer.addEventListener('touchstart', (e) => {
 
 feedContainer.addEventListener('touchmove', (e) => {
   if (!isScrolling) return;
-  
+
   const deltaY = startY - e.touches[0].clientY;
   feedContainer.scrollTop = startScrollTop + deltaY;
   e.preventDefault();
