@@ -2,7 +2,6 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
     Arial, sans-serif;
   margin: auto;
-  max-width: 38rem;
   padding: .5rem;
   background-color: #121212;
   color: #e0e0e0;
@@ -10,7 +9,7 @@ body {
 }
 
 #feed-container {
-  max-height: 300px;
+  max-height: 580px;
   overflow-y: auto;
   padding-right: 5px;
 }

@@ -285,13 +285,13 @@ sed -i 's/^CONF_SWAPSIZE=.*/CONF_SWAPSIZE=2048/' /etc/dphys-swapfile
 systemctl restart dphys-swapfile
 
 # Build the app (will be arm64 for assumably a Pi running 64-bit Pi OS Lite)
-npm run make-pi
+npm run make-pi-32
 
 # Install the required dependencies
 apt install trash-cli libglib2.0-bin -y
 
 # Install the built application deb file (note: this might complain about some missing KDE dependencies, but it's fine)
-dpkg -i /home/$USERNAME/gitlab-activity-display/out/make/deb/arm64/gitlab-activity-display_*_arm64.deb
+dpkg -i /home/$USERNAME/gitlab-activity-display/out/make/deb/armv7l/gitlab-activity-display_*_armhf.deb
 
 # Undo the swap size change
 sed -i 's/^CONF_SWAPSIZE=.*/CONF_SWAPSIZE=512/' /etc/dphys-swapfile
