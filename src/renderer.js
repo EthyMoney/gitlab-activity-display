@@ -16,7 +16,7 @@
 import './index.css';
 const { ipcRenderer } = require('electron');
 
-let lastSuccessfulFetchTime = null;
+let lastSuccessfulFetchTime = new Date();
 let displayedEntries = new Set(); // Track which entries have been displayed
 
 async function fetchFeed() {
@@ -238,7 +238,7 @@ async function fetchFeed() {
   } catch (error) {
     console.error('Error fetching feed:', error);
     const statusContainer = document.getElementById('status-container');
-    const errorMessage = `The feed has been unavailable since ${lastSuccessfulFetchTime ? lastSuccessfulFetchTime.toLocaleString() : 'now'}.`;
+    const errorMessage = `The feed has been unavailable since ${lastSuccessfulFetchTime.toLocaleString()} - Error: ${error.message}`;
     statusContainer.innerHTML = `<p style="color: red;">${errorMessage}</p>`;
   }
 }
