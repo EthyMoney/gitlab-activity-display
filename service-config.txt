@@ -1,0 +1,66 @@
+This will guide you through setting up a systemd service for the GitLab Activity Display application. This service will ensure that the application starts automatically on boot and restarts if it crashes.
+This assumes you have already built and installed the application. Do that before proceeding with these steps.
+
+
+# Make the service file (change 'logan' everywhere to your username)
+sudo nano /etc/systemd/system/gitlab-activity-display.service
+
+[Unit]
+Description=GitLab Activity Display
+After=network.target graphical-session.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=logan
+Group=logan
+WorkingDirectory=/home/logan/
+ExecStart=gitlab-activity-display
+Restart=always
+RestartSec=10
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/home/logan/.Xauthority
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=gitlab-activity-display
+
+[Install]
+WantedBy=graphical.target
+
+
+
+
+
+# Reload systemd to recognize the new service
+sudo systemctl daemon-reload
+
+# Enable the service to start on boot
+sudo systemctl enable gitlab-activity-display.service
+
+# Start the service immediately (optional)
+sudo systemctl start gitlab-activity-display.service
+
+
+
+# Other helpful stuff:
+
+# Check service status
+sudo systemctl status gitlab-activity-display.service
+
+# View logs
+sudo journalctl -u gitlab-activity-display.service -f
+
+# Stop the service
+sudo systemctl stop gitlab-activity-display.service
+
+# Restart the service
+sudo systemctl restart gitlab-activity-display.service
+
+# Disable auto-start
+sudo systemctl disable gitlab-activity-display.service
+
+
+
+That's it! Your GitLab activity display should now run as a systemd service, starting automatically on boot and restarting if it crashes. You can check its status and logs using the provided commands. If you need to make changes to the service file, remember to reload systemd with `sudo systemctl daemon-reload` after editing the service file.
