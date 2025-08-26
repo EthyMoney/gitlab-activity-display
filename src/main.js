@@ -7,6 +7,12 @@ import config from '../config.json';
 const currentTime = new Date().toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
 console.log('Application attempting to start...', currentTime);
 
+// GPU acceleration flags optimized for Raspberry Pi 2
+// Pi 2 has limited GPU capabilities, so we use conservative settings
+app.commandLine.appendSwitch('ignore-gpu-blacklist');
+app.commandLine.appendSwitch('enable-gpu-compositing');
+app.commandLine.appendSwitch('enable-accelerated-2d-canvas');
+
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
   app.quit();

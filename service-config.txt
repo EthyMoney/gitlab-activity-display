@@ -20,6 +20,8 @@ Restart=always
 RestartSec=10
 Environment=DISPLAY=:0
 Environment=XAUTHORITY=/home/logan/.Xauthority
+Environment=GPU_MAX_HEAP_SIZE=100
+Environment=GPU_MAX_ALLOC_PERCENT=100
 
 # Logging
 StandardOutput=journal
