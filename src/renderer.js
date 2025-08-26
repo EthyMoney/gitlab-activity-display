@@ -257,7 +257,16 @@ async function fetchFeed() {
   } catch (error) {
     console.error('Error fetching feed:', error);
     const statusContainer = document.getElementById('status-container');
-    const errorMessage = `The feed has been unavailable since ${lastSuccessfulFetchTime.toLocaleString()} - Error: ${error.message}`;
+    const formattedDateTime = lastSuccessfulFetchTime.toLocaleDateString('en-US', {
+      month: '2-digit',
+      day: '2-digit',
+      year: 'numeric'
+    }) + ' ' + lastSuccessfulFetchTime.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+    const errorMessage = `The feed has been unavailable since ${formattedDateTime} - Error: ${error.message}`;
     statusContainer.innerHTML = `<p style="color: red;">${errorMessage}</p>`;
   }
 }
