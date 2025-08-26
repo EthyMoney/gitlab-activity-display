@@ -19,6 +19,16 @@ if (started) {
 }
 
 const createWindow = () => {
+  // Determine the correct icon path for both dev and production
+  let iconPath;
+  if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+    // Development mode
+    iconPath = path.join(__dirname, '..', 'favicon.ico');
+  } else {
+    // Production mode - icon should be in the same directory as main.js
+    iconPath = path.join(__dirname, 'favicon.ico');
+  }
+
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 480,
@@ -28,7 +38,7 @@ const createWindow = () => {
       nodeIntegration: true,
       contextIsolation: false
     },
-    icon: __dirname + '/favicon.ico', // gets brought into the build by vite (as configured in vite.main.config.mjs)
+    icon: iconPath,
     fullscreen: true, // Optional: Open the window in fullscreen mode
     frame: false // Optional: Remove window frame if desired (needs to be false to hide mouse cursor)
   });
