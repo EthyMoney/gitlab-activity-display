@@ -6,7 +6,7 @@ RSS activity feed display app for a Pi and a 3.5" TFT display.
 
 ```bash
 git clone https://github.com/EthyMoney/gitlab-activity-display.git
-sudo chown -R your_username:your_username gitlab-activity-display
+sudo chown -R $USER:$USER gitlab-activity-display
 cd gitlab-activity-display
 ```
 
