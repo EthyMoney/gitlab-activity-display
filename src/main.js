@@ -1,7 +1,5 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'node:path';
-import started from 'electron-squirrel-startup';
-import fetch from 'node-fetch';
 import config from '../config.json';
 
 const currentTime = new Date().toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
@@ -14,8 +12,18 @@ app.commandLine.appendSwitch('enable-gpu-compositing');
 app.commandLine.appendSwitch('enable-accelerated-2d-canvas');
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
-if (started) {
-  app.quit();
+// electron-squirrel-startup is only needed on Windows for installer events
+if (process.platform === 'win32') {
+  try {
+    // Only require on Windows platform
+    const squirrelStartup = require('electron-squirrel-startup');
+    if (squirrelStartup) {
+      app.quit();
+    }
+  } catch (error) {
+    // electron-squirrel-startup not available, continue normally
+    console.log('electron-squirrel-startup not available (expected on non-Windows platforms)');
+  }
 }
 
 const createWindow = () => {
@@ -53,7 +61,7 @@ const createWindow = () => {
   // remove the menu
   mainWindow.removeMenu();
 
-  // Remove the DevTools for a cleaner display.
+  // Remove the DevTools option if not in development
   // mainWindow.webContents.openDevTools();
 };
 
