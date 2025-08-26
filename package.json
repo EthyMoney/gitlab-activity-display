@@ -32,6 +32,6 @@
   "license": "MIT",
   "dependencies": {
     "electron-squirrel-startup": "^1.0.1",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^2.7.0"
   }
 }
