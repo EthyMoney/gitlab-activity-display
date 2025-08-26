@@ -125,17 +125,41 @@ async function fetchFeed() {
           if (issueCommentMatch) {
             const issueNumber = issueCommentMatch[1];
             activityText = `commented on issue #${issueNumber}`;
-
-            // For issue comments, always show the actual comment from summary
-            const summaryDoc = parser.parseFromString(summary, 'text/html');
-            const commentText = summaryDoc.textContent?.trim() || '';
-            detailText = commentText.length > 100 ? commentText.substring(0, 100) + '...' : commentText;
           } else {
             activityText = `commented on ${commentTarget}`;
-            // For other comments, show the comment from summary
+          }
+
+          // Extract comment content from summary for all comment types
+          if (summary) {
             const summaryDoc = parser.parseFromString(summary, 'text/html');
-            const commentText = summaryDoc.textContent?.trim() || '';
-            detailText = commentText.length > 100 ? commentText.substring(0, 100) + '...' : commentText;
+
+            // Try multiple ways to extract the comment text
+            let commentText = '';
+
+            // First try to get text from p elements with data-sourcepos (GitLab specific)
+            const pElements = summaryDoc.querySelectorAll('p[data-sourcepos]');
+            if (pElements.length > 0) {
+              commentText = Array.from(pElements).map(p => p.textContent?.trim()).filter(text => text).join(' ');
+            }
+
+            // Fallback to all p elements
+            if (!commentText) {
+              const allPElements = summaryDoc.querySelectorAll('p');
+              if (allPElements.length > 0) {
+                commentText = Array.from(allPElements).map(p => p.textContent?.trim()).filter(text => text).join(' ');
+              }
+            }
+
+            // Final fallback to all text content
+            if (!commentText) {
+              commentText = summaryDoc.textContent?.trim() || '';
+            }
+
+            // Clean up the comment text and truncate if needed
+            commentText = commentText.replace(/\s+/g, ' ').trim();
+            detailText = commentText.length > 150 ? commentText.substring(0, 150) + '...' : commentText;
+          } else {
+            detailText = 'No comment content available';
           }
         }
       } else if (title && title.includes('created wiki page')) {
