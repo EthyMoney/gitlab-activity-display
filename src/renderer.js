@@ -124,20 +124,15 @@ async function fetchFeed() {
           const issueCommentMatch = commentTarget.match(/issue #(\d+)(?:: (.+))?/);
           if (issueCommentMatch) {
             const issueNumber = issueCommentMatch[1];
-            const issueTitle = issueCommentMatch[2]; // This might be undefined if no title
             activityText = `commented on issue #${issueNumber}`;
 
-            // For issue comments, show the actual comment from summary if no issue title
-            if (issueTitle) {
-              detailText = issueTitle;
-            } else {
-              const summaryDoc = parser.parseFromString(summary, 'text/html');
-              const commentText = summaryDoc.textContent?.trim() || '';
-              detailText = commentText.length > 100 ? commentText.substring(0, 100) + '...' : commentText;
-            }
+            // For issue comments, always show the actual comment from summary
+            const summaryDoc = parser.parseFromString(summary, 'text/html');
+            const commentText = summaryDoc.textContent?.trim() || '';
+            detailText = commentText.length > 100 ? commentText.substring(0, 100) + '...' : commentText;
           } else {
             activityText = `commented on ${commentTarget}`;
-            // For other comments, we might want to show part of the comment from summary
+            // For other comments, show the comment from summary
             const summaryDoc = parser.parseFromString(summary, 'text/html');
             const commentText = summaryDoc.textContent?.trim() || '';
             detailText = commentText.length > 100 ? commentText.substring(0, 100) + '...' : commentText;
