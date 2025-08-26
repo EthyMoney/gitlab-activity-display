@@ -12,6 +12,8 @@ cd gitlab-activity-display
 
 ## Build It
 
+Switch to the branch you want, there's a branch for 3.5" TFT (main), and 10.1" 1024x600 on a 32-bit Pi (32-bit-1024x600-version)
+
 First, set your feed URL with a valid feed token in `config.json` (copy from `config.json.template`). This gets bundled into the built app, so it needs to be correct before building.
 
 **Important: Never use `sudo` with npm commands as it creates permission issues!**
