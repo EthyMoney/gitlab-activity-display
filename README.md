@@ -111,3 +111,58 @@ See `service-config.txt` for details on how to run the app as a service.
 ```bash
 sudo apt remove --purge gitlab-activity-display -y
 ```
+
+## Raspberry Pi Setup Gotchas & Troubleshooting
+
+If you are running this on an older Pi (e.g. Pi 2) or a newer OS (e.g. Debian Trixie 32-bit), you might encounter some specific issues:
+
+### HDMI Display is Black (No Signal)
+
+The new default graphics driver (`vc4-kms-v3d`) has compatibility issues with older 1024x600 monitors, causing the HDMI signal to drop even when Xorg is rendering correctly.
+
+**Fix:** Edit `/boot/firmware/config.txt` and switch to the Fake KMS driver, while also forcing the HDMI resolution:
+
+1. Change `dtoverlay=vc4-kms-v3d` to `dtoverlay=vc4-fkms-v3d` (or delete the line completely to use legacy fbdev).
+2. Add the following lines to forcefully drive your 1024x600 monitor:
+```ini
+hdmi_force_hotplug=1
+hdmi_group=2
+hdmi_mode=87
+hdmi_cvt=1024 600 60 6 0 0 0
+```
+
+### Electron App Hangs (100% CPU on 1 Core, No Window)
+
+Debian Trixie restricts user-namespace sandboxing by default. The Electron sandbox initialization will infinitely loop and freeze the app.
+
+**Fix:** Add the `--no-sandbox` flag to the application execution command (e.g. in your Openbox `autostart` file):
+```bash
+gitlab-activity-display --no-sandbox
+```
+
+### Scheduled Backlight Control
+
+You can automatically turn your HDMI monitor on and off using `ddcutil` and `cron`:
+
+1. Install `ddcutil` and enable I2C:
+```bash
+sudo apt install ddcutil i2c-tools -y
+echo 'i2c-dev' | sudo tee -a /etc/modules
+sudo modprobe i2c-dev
+```
+
+2. Create a control script `/usr/local/bin/display-power`:
+```bash
+#!/usr/bin/env bash
+ACTION="${1:-}"
+case "$ACTION" in
+  on)  VALUE=1 ;;
+  off) VALUE=4 ;;
+esac
+ddcutil setvcp D6 "$VALUE"
+```
+3. Make it executable (`sudo chmod +x /usr/local/bin/display-power`) and add it to `sudo crontab -e`:
+```text
+0 8 * * * /usr/local/bin/display-power on
+0 17 * * * /usr/local/bin/display-power off
+```

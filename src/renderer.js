@@ -14,7 +14,7 @@
  */
 
 import './index.css';
-const { ipcRenderer } = require('electron');
+const { ipcRenderer } = window.require('electron');
 
 let lastSuccessfulFetchTime = new Date();
 let displayedEntries = new Set(); // Track which entries have been displayed
