@@ -158,13 +158,22 @@ ACTION="${1:-}"
 case "$ACTION" in
   on)  VALUE=1 ;;
   off) VALUE=4 ;;
+  sync)
+    HOUR=$(date +%H)
+    if [ "$HOUR" -ge 8 ] && [ "$HOUR" -lt 17 ]; then
+      VALUE=1
+    else
+      VALUE=4
+    fi
+    ;;
 esac
 ddcutil setvcp D6 "$VALUE"
 ```
-3. Make it executable (`sudo chmod +x /usr/local/bin/display-power`) and add it to `sudo crontab -e`:
+3. Make it executable (`sudo chmod +x /usr/local/bin/display-power`) and add it to `sudo crontab -e`. The `@reboot` hook ensures the display syncs to the correct state if the Pi boots up *after* a scheduled time:
 ```text
 0 8 * * * /usr/local/bin/display-power on
 0 17 * * * /usr/local/bin/display-power off
+@reboot sleep 60 && /usr/local/bin/display-power sync
 ```
 
 ### Missing Fonts and Emojis
