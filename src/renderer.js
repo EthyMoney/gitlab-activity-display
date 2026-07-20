@@ -204,6 +204,7 @@ async function fetchFeed() {
 
       const item = document.createElement('div');
       item.className = isNewEntry ? 'feed-item new' : 'feed-item';
+      item.setAttribute('data-activity', activityText.toLowerCase());
       const formattedDate = updatedDate.toLocaleDateString('en-US', {
         month: '2-digit',
         day: '2-digit'
@@ -215,21 +216,10 @@ async function fetchFeed() {
       });
 
       item.innerHTML = `
-        <h4>${author} ${activityText}</h4>
-        <p>${formattedDate} ${formattedTime} • ${projectInfo}</p>
-        ${detailText ? `<p>${detailText}</p>` : ''}
+        <h4>${author} ${activityText}${isRecentEntry ? '<span class="new-badge">New</span>' : ''}</h4>
+        <p class="meta-info">${formattedDate} ${formattedTime} <span class="meta-dot"></span> ${projectInfo}</p>
+        ${detailText ? `<p class="detail-text">${detailText}</p>` : ''}
       `;
-
-      if (isRecentEntry) {
-        const newDot = document.createElement('span');
-        newDot.className = 'new-dot';
-        const newText = document.createElement('span');
-        newText.className = 'new-text';
-        newText.innerHTML = 'NEW!';
-        const pElement = item.querySelector('p');
-        pElement.appendChild(newDot);
-        pElement.appendChild(newText);
-      }
 
       feedContainer.appendChild(item);
 
@@ -237,7 +227,7 @@ async function fetchFeed() {
       if (isNewEntry) {
         setTimeout(() => {
           item.classList.remove('new');
-        }, 1000);
+        }, 5000);
       }
     });
 
@@ -337,3 +327,20 @@ feedContainer.addEventListener('touchmove', (e) => {
 feedContainer.addEventListener('touchend', () => {
   isScrolling = false;
 });
+
+// Clock update logic
+function updateClock() {
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  const dateStr = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  
+  const timeEl = document.getElementById('clock-time');
+  const dateEl = document.getElementById('clock-date');
+  
+  if (timeEl) timeEl.textContent = timeStr;
+  if (dateEl) dateEl.textContent = dateStr;
+}
+
+// Initial update and set interval
+updateClock();
+setInterval(updateClock, 1000);
