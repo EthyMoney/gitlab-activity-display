@@ -166,3 +166,11 @@ ddcutil setvcp D6 "$VALUE"
 0 8 * * * /usr/local/bin/display-power on
 0 17 * * * /usr/local/bin/display-power off
 ```
+
+### Missing Fonts and Emojis
+
+If your GitLab feed contains emojis or specific fonts that render as blank squares on the Pi, you may need to install additional system fonts:
+
+```bash
+sudo apt install fonts-noto-color-emoji fonts-liberation -y
+```
