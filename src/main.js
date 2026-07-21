@@ -11,6 +11,10 @@ app.commandLine.appendSwitch('ignore-gpu-blacklist');
 app.commandLine.appendSwitch('enable-gpu-compositing');
 app.commandLine.appendSwitch('enable-accelerated-2d-canvas');
 
+// Ignore certificate errors for self-hosted GitLab instances with self-signed certs
+// This allows <img> tags to load avatars properly
+app.commandLine.appendSwitch('ignore-certificate-errors', 'true');
+
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 // electron-squirrel-startup is only needed on Windows for installer events
 if (process.platform === 'win32') {
