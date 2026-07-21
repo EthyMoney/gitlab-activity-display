@@ -86,16 +86,19 @@ async function fetchFeed() {
       // Add to displayed entries set
       displayedEntries.add(id);
 
-      // Extract Avatar URL
-      const mediaThumbnail = entry.getElementsByTagNameNS('*', 'thumbnail')[0] || 
-                             entry.getElementsByTagName('media:thumbnail')[0] || 
-                             entry.getElementsByTagName('thumbnail')[0];
+      // Extract Avatar URL robustly by checking all child tags
       let avatarUrl = '';
-      if (mediaThumbnail) {
-         avatarUrl = mediaThumbnail.getAttribute('url') || '';
-         if (avatarUrl.startsWith('/') && feedOrigin) {
-           avatarUrl = feedOrigin + avatarUrl;
-         }
+      const allTags = entry.getElementsByTagName('*');
+      for (let j = 0; j < allTags.length; j++) {
+        const tag = allTags[j];
+        if (tag.tagName.toLowerCase().includes('thumbnail') || tag.localName === 'thumbnail') {
+          avatarUrl = tag.getAttribute('url') || '';
+          if (avatarUrl) break;
+        }
+      }
+
+      if (avatarUrl && avatarUrl.startsWith('/') && feedOrigin) {
+        avatarUrl = feedOrigin + avatarUrl;
       }
       
       // Generate initials fallback if no avatar
