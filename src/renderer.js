@@ -65,8 +65,8 @@ async function fetchFeed() {
       let projectInfo = '';
       let detailText = '';
 
-      // Extract project path (everything after "at " or "in ") - add null check
-      const projectMatch = title ? (title.match(/at (.+)$/) || title.match(/in (.+)$/)) : null;
+      // Extract project path (everything after "at " or "in " or "created project ") - add null check
+      const projectMatch = title ? (title.match(/at (.+)$/) || title.match(/in (.+)$/) || title.match(/created project (.+)$/)) : null;
       projectInfo = projectMatch ? projectMatch[1] : 'Unknown Project';
 
       // Determine activity type and format accordingly
@@ -196,6 +196,8 @@ async function fetchFeed() {
 
           detailText = cleanSummary ? `${cleanSummary} ${commitId}${additionalCommits}` : '';
         }
+      } else if (title && title.includes('created project')) {
+        activityText = 'created project';
       } else {
         // Generic fallback for unknown activity types
         const genericMatch = title ? title.match(/(.+) at/) : null;
@@ -333,10 +335,10 @@ function updateClock() {
   const now = new Date();
   const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
   const dateStr = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-  
+
   const timeEl = document.getElementById('clock-time');
   const dateEl = document.getElementById('clock-date');
-  
+
   if (timeEl) timeEl.textContent = timeStr;
   if (dateEl) dateEl.textContent = dateStr;
 }
