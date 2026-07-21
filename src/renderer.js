@@ -45,6 +45,15 @@ async function fetchFeed() {
     const xml = parser.parseFromString(text, 'application/xml');
     const entries = xml.getElementsByTagName('entry');
 
+    // Extract base URL to handle relative avatar paths
+    let feedOrigin = '';
+    try {
+      const feedLink = xml.querySelector('link[rel="alternate"]');
+      if (feedLink) {
+        feedOrigin = new URL(feedLink.getAttribute('href')).origin;
+      }
+    } catch(e) {}
+
     // Store current entries to detect new ones
     const currentEntries = Array.from(entries).map(entry => {
       const id = entry.getElementsByTagName('id')[0].textContent;
@@ -78,10 +87,15 @@ async function fetchFeed() {
       displayedEntries.add(id);
 
       // Extract Avatar URL
-      const mediaThumbnail = entry.getElementsByTagNameNS('*', 'thumbnail')[0] || entry.getElementsByTagName('thumbnail')[0];
+      const mediaThumbnail = entry.getElementsByTagNameNS('*', 'thumbnail')[0] || 
+                             entry.getElementsByTagName('media:thumbnail')[0] || 
+                             entry.getElementsByTagName('thumbnail')[0];
       let avatarUrl = '';
       if (mediaThumbnail) {
          avatarUrl = mediaThumbnail.getAttribute('url') || '';
+         if (avatarUrl.startsWith('/') && feedOrigin) {
+           avatarUrl = feedOrigin + avatarUrl;
+         }
       }
       
       // Generate initials fallback if no avatar
