@@ -23,9 +23,15 @@
       </svg>
       <h1>Activity Feed</h1>
     </div>
-    <div id="clock-container">
-      <div id="clock-time">--:--</div>
-      <div id="clock-date">--</div>
+    <div style="display: flex; gap: 32px; align-items: center; justify-self: center;">
+      <div id="clock-container">
+        <div id="clock-time">--:--</div>
+        <div id="clock-date">--</div>
+      </div>
+      <div id="weather-container" style="display: flex; flex-direction: column; align-items: center;">
+        <div id="weather-icon" style="font-size: 22px; line-height: 1.2;">🌤️</div>
+        <div id="weather-temp" style="font-size: 14px; font-weight: bold; color: #f8fafc; line-height: 1;">--°F</div>
+      </div>
     </div>
     <div id="right-header">
       <div id="sync-container" style="display: none;">
@@ -36,6 +42,16 @@
     </div>
   </div>
   <div id="feed-container"></div>
+
+  <!-- Offline Overlay -->
+  <div id="offline-overlay" style="display: none;">
+    <div class="offline-content">
+      <div class="offline-icon">📡</div>
+      <h2>Reconnecting to Network...</h2>
+      <p id="offline-error-text"></p>
+    </div>
+  </div>
+
   <script type="module" src="/src/renderer.js"></script>
 </body>
 

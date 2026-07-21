@@ -41,6 +41,11 @@ async function fetchFeed() {
 
   try {
     const text = await ipcRenderer.invoke('fetch-feed');
+    
+    // Hide offline overlay on success
+    const offlineOverlay = document.getElementById('offline-overlay');
+    if (offlineOverlay) offlineOverlay.style.display = 'none';
+
     const parser = new DOMParser();
     const xml = parser.parseFromString(text, 'application/xml');
     const entries = xml.getElementsByTagName('entry');
@@ -321,24 +326,56 @@ async function fetchFeed() {
     console.error('Error fetching feed:', error);
     const statusContainer = document.getElementById('status-container');
     const formattedDateTime = lastSuccessfulFetchTime.toLocaleDateString('en-US', {
-      month: '2-digit',
-      day: '2-digit',
-      year: 'numeric'
-    }) + ' ' + lastSuccessfulFetchTime.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
-    const errorMessage = `The feed has been unavailable since ${formattedDateTime} - Error: ${error.message}`;
-    statusContainer.innerHTML = `<p style="color: red;">${errorMessage}</p>`;
+    const errorMessage = error.message.includes('fetch') 
+      ? 'Network error: Cannot reach GitLab server.' 
+      : `Failed to load feed: ${error.message}`;
+      
+    const offlineOverlay = document.getElementById('offline-overlay');
+    const offlineText = document.getElementById('offline-error-text');
+    if (offlineOverlay && offlineText) {
+      offlineOverlay.style.display = 'flex';
+      offlineText.textContent = errorMessage;
+    }
+  }
+}
+
+// Weather fetching logic
+async function fetchWeather() {
+  try {
+    const response = await fetch('https://api.open-meteo.com/v1/forecast?latitude=45.26&longitude=-93.45&current=temperature_2m,weather_code&temperature_unit=fahrenheit');
+    if (!response.ok) return;
+    const data = await response.json();
+    const temp = Math.round(data.current.temperature_2m);
+    const code = data.current.weather_code;
+    
+    let icon = '🌤️';
+    if (code === 0) icon = '☀️';
+    else if (code >= 1 && code <= 3) icon = '⛅';
+    else if (code >= 45 && code <= 48) icon = '🌫️';
+    else if (code >= 51 && code <= 55) icon = '🌧️';
+    else if (code >= 61 && code <= 65) icon = '🌧️';
+    else if (code >= 71 && code <= 77) icon = '❄️';
+    else if (code >= 80 && code <= 82) icon = '🌦️';
+    else if (code >= 95) icon = '⛈️';
+    
+    const iconEl = document.getElementById('weather-icon');
+    const tempEl = document.getElementById('weather-temp');
+    if (iconEl) iconEl.textContent = icon;
+    if (tempEl) tempEl.textContent = `${temp}°F`;
+  } catch(e) {
+    console.error('Weather fetch failed', e);
   }
 }
 
 // Initial fetch
 fetchFeed();
+fetchWeather();
 
 // Set interval to auto-update every minute (60,000 milliseconds)
 setInterval(fetchFeed, 60000);
+
+// Set interval to update weather every 30 minutes
+setInterval(fetchWeather, 30 * 60 * 1000);
 
 // Hide the mouse cursor
 document.body.style.cursor = 'none';
