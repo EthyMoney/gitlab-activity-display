@@ -324,8 +324,7 @@ async function fetchFeed() {
     displayedEntries = new Set([...displayedEntries].filter(id => currentIds.has(id)));
   } catch (error) {
     console.error('Error fetching feed:', error);
-    const statusContainer = document.getElementById('status-container');
-    const formattedDateTime = lastSuccessfulFetchTime.toLocaleDateString('en-US', {
+    
     const errorMessage = error.message.includes('fetch') 
       ? 'Network error: Cannot reach GitLab server.' 
       : `Failed to load feed: ${error.message}`;
