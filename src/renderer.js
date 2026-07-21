@@ -341,6 +341,29 @@ function updateClock() {
 
   if (timeEl) timeEl.textContent = timeStr;
   if (dateEl) dateEl.textContent = dateStr;
+
+  // Sync update logic
+  const syncContainer = document.getElementById('sync-container');
+  const lastSyncEl = document.getElementById('last-sync');
+  const nextSyncEl = document.getElementById('next-sync');
+
+  if (syncContainer && lastSuccessfulFetchTime) {
+    syncContainer.style.display = 'flex';
+    
+    // Format last sync
+    const lastSyncTimeStr = lastSuccessfulFetchTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
+    if (lastSyncEl) lastSyncEl.textContent = `Last synced: ${lastSyncTimeStr}`;
+    
+    // Calculate next sync countdown (fetch happens every 60s)
+    const nextSyncTime = new Date(lastSuccessfulFetchTime.getTime() + 60000);
+    const diffSeconds = Math.max(0, Math.floor((nextSyncTime - now) / 1000));
+    
+    if (diffSeconds === 0) {
+      if (nextSyncEl) nextSyncEl.textContent = 'Syncing...';
+    } else {
+      if (nextSyncEl) nextSyncEl.textContent = `Next sync in: ${diffSeconds}s`;
+    }
+  }
 }
 
 // Initial update and set interval
