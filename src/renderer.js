@@ -20,13 +20,30 @@ let lastSuccessfulFetchTime = new Date();
 let displayedEntries = new Set(); // Track which entries have been displayed
 
 async function fetchFeed() {
+  const feedContainer = document.getElementById('feed-container');
+  const statusContainer = document.getElementById('status-container');
+
+  // Show skeleton animation on initial load
+  if (displayedEntries.size === 0) {
+    feedContainer.innerHTML = Array(6).fill(`
+      <div class="feed-item skeleton">
+        <div class="skeleton-header">
+          <div class="skeleton-avatar"></div>
+          <div class="skeleton-title-container">
+            <div class="skeleton-title"></div>
+            <div class="skeleton-meta"></div>
+          </div>
+        </div>
+        <div class="skeleton-detail"></div>
+      </div>
+    `).join('');
+  }
+
   try {
     const text = await ipcRenderer.invoke('fetch-feed');
     const parser = new DOMParser();
     const xml = parser.parseFromString(text, 'application/xml');
     const entries = xml.getElementsByTagName('entry');
-    const feedContainer = document.getElementById('feed-container');
-    const statusContainer = document.getElementById('status-container');
 
     // Store current entries to detect new ones
     const currentEntries = Array.from(entries).map(entry => {
@@ -59,6 +76,28 @@ async function fetchFeed() {
 
       // Add to displayed entries set
       displayedEntries.add(id);
+
+      // Extract Avatar URL
+      const mediaThumbnail = entry.getElementsByTagNameNS('*', 'thumbnail')[0] || entry.getElementsByTagName('thumbnail')[0];
+      let avatarUrl = '';
+      if (mediaThumbnail) {
+         avatarUrl = mediaThumbnail.getAttribute('url') || '';
+      }
+      
+      // Generate initials fallback if no avatar
+      const initials = author.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+      
+      // Color hash based on name
+      let hash = 0;
+      for (let i = 0; i < author.length; i++) {
+        hash = author.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      const hue = Math.abs(hash % 360);
+      const avatarColor = `hsl(${hue}, 60%, 40%)`;
+
+      const avatarHTML = avatarUrl 
+        ? `<img class="avatar" src="${avatarUrl}" alt="${author}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" /><div class="avatar" style="display:none; background-color: ${avatarColor}">${initials}</div>`
+        : `<div class="avatar" style="background-color: ${avatarColor}">${initials}</div>`;
 
       // Parse different activity types from the title
       let activityText = '';
@@ -217,9 +256,24 @@ async function fetchFeed() {
         hour12: true
       });
 
+      // Status Badges
+      let badgeHTML = '';
+      if (activityText.includes('merged') || activityText.includes('accepted')) {
+        badgeHTML = '<span class="status-badge badge-merged">Merged</span>';
+      } else if (activityText.includes('closed')) {
+        badgeHTML = '<span class="status-badge badge-closed">Closed</span>';
+      } else if (activityText.includes('opened')) {
+        badgeHTML = '<span class="status-badge badge-opened">Opened</span>';
+      }
+
       item.innerHTML = `
-        <h4>${author} ${activityText}${isRecentEntry ? '<span class="new-badge">New</span>' : ''}</h4>
-        <p class="meta-info">${formattedDate} ${formattedTime} <span class="meta-dot"></span> ${projectInfo}</p>
+        <div class="feed-item-header">
+          ${avatarHTML}
+          <div>
+            <h4>${author} ${activityText}${badgeHTML}${isRecentEntry ? '<span class="new-badge">New</span>' : ''}</h4>
+            <p class="meta-info">${formattedDate} ${formattedTime} <span class="meta-dot"></span> ${projectInfo}</p>
+          </div>
+        </div>
         ${detailText ? `<p class="detail-text">${detailText}</p>` : ''}
       `;
 
