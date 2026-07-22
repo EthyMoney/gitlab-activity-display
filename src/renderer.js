@@ -475,3 +475,29 @@ function updateClock() {
 // Initial update and set interval
 updateClock();
 setInterval(updateClock, 1000);
+
+// Dynamic Background Animation
+const palettes = [
+  ['#0f172a', '#1e1b4b', '#000000', '#172554'], // Midnight Purple & Blue
+  ['#022c22', '#064e3b', '#000000', '#020617'], // Deep Forest
+  ['#450a0a', '#7f1d1d', '#000000', '#18181b'], // Crimson Eclipse
+  ['#082f49', '#0c4a6e', '#000000', '#172554'], // Ocean Abyss
+  ['#2e1065', '#4c1d95', '#000000', '#3b0764'], // Cosmic Dust
+  ['#18181b', '#27272a', '#000000', '#09090b']  // Monolith Grey
+];
+
+const angles = ['-45deg', '45deg', '135deg', '-135deg', '60deg', '-60deg'];
+
+function randomizeBackground() {
+  const palette = palettes[Math.floor(Math.random() * palettes.length)];
+  const angle = angles[Math.floor(Math.random() * angles.length)];
+  
+  document.body.style.setProperty('--color1', palette[0]);
+  document.body.style.setProperty('--color2', palette[1]);
+  document.body.style.setProperty('--color3', palette[2]);
+  document.body.style.setProperty('--color4', palette[3]);
+  document.body.style.setProperty('--bg-angle', angle);
+}
+
+// Randomize background every 2 minutes
+setInterval(randomizeBackground, 2 * 60 * 1000);
