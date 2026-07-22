@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'node:path';
 import config from '../config.json';
+import { TempestPublicProvider } from './tempest-public.js';
 
 const currentTime = new Date().toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
 console.log('Application attempting to start...', currentTime);
@@ -79,6 +80,12 @@ ipcMain.handle('fetch-feed', async () => {
   }
   const text = await response.text();
   return text;
+});
+
+const tempestProvider = new TempestPublicProvider();
+ipcMain.handle('fetch-weather', async () => {
+  const data = await tempestProvider.getWeather(217098);
+  return data;
 });
 
 // This method will be called when Electron has finished

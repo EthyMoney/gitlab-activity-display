@@ -338,29 +338,28 @@ async function fetchFeed() {
   }
 }
 
-// Weather fetching logic
+// Weather fetching logic using Tempest API
 async function fetchWeather() {
   try {
-    const response = await fetch('https://api.open-meteo.com/v1/forecast?latitude=45.26&longitude=-93.45&current=temperature_2m,weather_code&temperature_unit=fahrenheit');
-    if (!response.ok) return;
-    const data = await response.json();
-    const temp = Math.round(data.current.temperature_2m);
-    const code = data.current.weather_code;
+    const data = await ipcRenderer.invoke('fetch-weather');
+    const tempF = Math.round((data.current.tempC * 9/5) + 32);
+    const iconCode = data.current.icon || '';
     
     let icon = '🌤️';
-    if (code === 0) icon = '☀️';
-    else if (code >= 1 && code <= 3) icon = '⛅';
-    else if (code >= 45 && code <= 48) icon = '🌫️';
-    else if (code >= 51 && code <= 55) icon = '🌧️';
-    else if (code >= 61 && code <= 65) icon = '🌧️';
-    else if (code >= 71 && code <= 77) icon = '❄️';
-    else if (code >= 80 && code <= 82) icon = '🌦️';
-    else if (code >= 95) icon = '⛈️';
+    if (iconCode.includes('clear')) icon = iconCode.includes('night') ? '🌙' : '☀️';
+    else if (iconCode.includes('partly-cloudy')) icon = iconCode.includes('night') ? '☁️' : '⛅';
+    else if (iconCode.includes('cloudy')) icon = '☁️';
+    else if (iconCode.includes('rain')) icon = '🌧️';
+    else if (iconCode.includes('snow')) icon = '❄️';
+    else if (iconCode.includes('sleet')) icon = '🌨️';
+    else if (iconCode.includes('wind')) icon = '💨';
+    else if (iconCode.includes('fog')) icon = '🌫️';
+    else if (iconCode.includes('thunderstorm')) icon = '⛈️';
     
     const iconEl = document.getElementById('weather-icon');
     const tempEl = document.getElementById('weather-temp');
     if (iconEl) iconEl.textContent = icon;
-    if (tempEl) tempEl.textContent = `${temp}°F`;
+    if (tempEl) tempEl.textContent = `${tempF}°F`;
   } catch(e) {
     console.error('Weather fetch failed', e);
   }
